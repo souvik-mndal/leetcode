@@ -1,89 +1,101 @@
-![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen)
-![Memory](https://img.shields.io/badge/Memory-9.26%20MB%20(beats%2082.66%25)-brightgreen)
+![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-9.07%20MB%20(beats%2098.82%25)-brightgreen?style=for-the-badge)
 
 ---
 
 ## Problem in Plain English
 
-The problem asks if two strings, `s` and `t`, have the exact same character pattern. We call two strings **isomorphic** if you can replace the characters in `s` one-by-one to transform it into `t`.
+The problem asks if two strings, `s` and `t`, have the exact same character pattern. 
 
-Here are the replacement rules:
-1. Every time a specific character appears in `s`, it must always map to the exact same character in `t`.
-2. No two different characters from `s` can map to the same character in `t` (the mapping must be one-to-one).
-3. A character is allowed to map to itself.
-4. Character order must be preserved.
+You can think of it as swapping characters: can you replace every character in `s` with a new character to turn it into `t`?
 
-### Examples
-* **`s = "egg"`, `t = "add"` $\rightarrow$ `true`**: 'e' turns into 'a', and 'g' turns into 'd'. The pattern matches.
-* **`s = "foo"`, `t = "bar"` $\rightarrow$ `false`**: 'o' would need to map to both 'a' and 'r', which breaks the rules.
-* **`s = "ab"`, `t = "aa"` $\rightarrow$ `false`**: Both 'a' and 'b' would try to map to 'a', which is not allowed.
+There are a few simple rules:
+* Every instance of a character must map to the same target character. For example, if 'e' becomes 'a', all 'e's must become 'a's.
+* No two different characters can map to the same target character. If 'e' becomes 'a', no other letter is allowed to become 'a'.
+* A character can map to itself (e.g., 'a' can map to 'a').
+* The order of characters must stay the same.
+
+**Example 1:**  
+`s = "paper"`, `t = "title"` $\rightarrow$ **True**  
+'p' $\rightarrow$ 't', 'a' $\rightarrow$ 'i', 'e' $\rightarrow$ 'l', 'r' $\rightarrow$ 'e'. The pattern matches perfectly.
+
+**Example 2:**  
+`s = "foo"`, `t = "bar"` $\rightarrow$ **False**  
+'o' would have to map to both 'a' and 'r', which is not allowed.
 
 ---
 
 ## Intuition
 
-Think of this as creating a **translation dictionary** between two languages. 
+To solve this, you need a **two-way lock** (a one-to-one relationship). 
 
-If 'e' translates to 'a', then every 'e' you see later *must* translate to 'a'. Furthermore, no other letter can translate to 'a' because 'a' is already taken. 
+Think of it like assigning secret code names:
+1. When you see a letter in `s`, you give it a code name from `t`.
+2. Once a code name from `t` is taken, no other letter in `s` can claim it.
 
-To solve this, we need to keep track of two things as we move through the strings:
-1. Which character in `t` is assigned to each character in `s`?
-2. Has a character in `t` already been claimed by a different character in `s`?
-
-If we try to create a mapping that breaks either rule, the strings are not isomorphic.
+If you ever see a letter in `s` trying to map to two different target letters, or two letters in `s` trying to share the same code name in `t`, the pattern breaks.
 
 ---
 
 ## Approach
 
-Here is how the provided C++ code executes step-by-step:
+Here is how the code works step-by-step:
 
-* **Setup**: Create two arrays (fixed size of 256 to cover all standard **ASCII** characters):
-  * `mp`: Stores the mapped character from `s` to `t`.
-  * `chk`: Acts as a checklist to mark which characters in `t` are already taken.
-* **First Pass (Building the Map)**: Loop through both strings index by index.
-  * Check if the current character `s[i]` has no mapping yet (`mp[s[i]] == 0`) **and** the current character `t[i]` hasn't been claimed yet (`chk[t[i]] == 0`).
-  * If both are free, record the mapping by setting `mp[s[i]] = t[i]` and mark `t[i]` as taken by setting `chk[t[i]] = 1`.
-* **Second Pass (Verification)**: Loop through the strings a second time.
-  * Check if `mp[s[i]]` matches `t[i]` at every index.
-  * If any character does not match its expected mapping, return `false` immediately.
-* **Return Result**: If both passes complete without any conflicts, return `true`.
+* **Create fixed-size lookup tables:**
+  * Use an array `mp` of size 256 (covering all standard character codes) to store which character in `s` maps to which character in `t`.
+  * Use a boolean array `chk` of size 256 to mark which target characters in `t` are already claimed.
+
+* **Pass 1: Build the mappings:**
+  * Loop through each character position `i` in the strings.
+  * Check if `s[i]` does not have a mapping yet (`mp[s[i]] == 0`) AND `t[i]` has not been claimed yet (`chk[t[i]] == 0`).
+  * If both conditions are true, create the mapping (`mp[s[i]] = t[i]`) and mark `t[i]` as taken (`chk[t[i]] = true`).
+
+* **Pass 2: Verify the mappings:**
+  * Loop through the string again.
+  * Check if `mp[s[i]]` equals `t[i]` for every position.
+  * If any character maps to something different, immediately return `false`.
+
+* **Return result:**
+  * If all characters pass verification, return `true`.
 
 ---
 
 ## Time & Space Complexity
 
-* **Time Complexity:** **O(n)** — where $n$ is the length of string `s` (or `t`). The code scans the strings twice, doing fast $O(1)$ array lookups for each character.
-* **Space Complexity:** **O(1)** — fixed size arrays of size 256 are used. The memory consumed never grows, regardless of how long the input strings are.
+* **Time Complexity:** **O(N)** — where $N$ is the length of the strings. The code loops through the strings twice. Looking up items in array positions takes constant time ($O(1)$).
+* **Space Complexity:** **O(1)** — the code creates fixed arrays of size 256. This memory does not grow regardless of how long the input strings are.
 
-### Can it be improved?
+### Optimization Potential
 
-**Yes.** While the space complexity is already optimal, the time efficiency can be improved by completing the check in a **single pass** instead of two separate loops. We can also simplify the logic by recording the **last seen position** of characters in both strings.
+**Is this already optimal?**  
+The asymptotic complexity is already optimal (**O(N) Time** and **O(1) Space**), because you must inspect every character at least once. 
+
+However, you can optimize the **runtime** by combining both loops into a **single pass**, checking for conflicts on the fly:
 
 ```cpp
-// Optimized single-pass approach:
-vector<int> pos_s(256, 0), pos_t(256, 0);
-
-for (int i = 0; i < s.size(); ++i) {
-    // If the last seen positions don't match, the pattern is broken
-    if (pos_s[s[i]] != pos_t[t[i]]) return false;
+// Single-pass optimization
+for (int i = 0; i < s.size(); i++) {
+    // Conflict 1: s[i] was already mapped to a different character
+    if (mp[s[i]] != 0 && mp[s[i]] != t[i]) return false;
     
-    // Store current position + 1 (using 1-based indexing so 0 means unseen)
-    pos_s[s[i]] = i + 1;
-    pos_t[t[i]] = i + 1;
+    // Conflict 2: t[i] was already claimed by a different character in s
+    if (mp[s[i]] == 0 && chk[t[i]]) return false;
+    
+    mp[s[i]] = t[i];
+    chk[t[i]] = true;
 }
 return true;
 ```
 
-* **Improved Complexity:** **Time:** O(n) (single pass), **Space:** O(1).
-* **Theoretical Best Complexity:** **Time:** O(n), **Space:** O(1). Every character must be examined at least once, making $O(n)$ time the best possible limit. The single-pass version reaches this theoretical limit.
+* **Improved Complexity:** Still **O(N) Time** and **O(1) Space**, but runs in roughly half the actual CPU operations by eliminating the second loop.
+* **Theoretical Best:** **O(N) Time** and **O(1) Space**. The single-pass version hits this absolute limit.
 
 ---
 
 ## Edge Cases Handled
 
-* **Many-to-One Conflicts (e.g., `s = "ab"`, `t = "aa"`):** Handled because the `chk` array prevents 'b' from claiming 'a' when 'a' was already assigned to 'a'.
-* **One-to-Many Conflicts (e.g., `s = "badc"`, `t = "baba"`):** Handled during validation when a character in `s` maps to a different character than previously recorded.
-* **Self-Mapping (e.g., `s = "paper"`, `t = "paper"`):** Characters mapping to themselves (like 'p' to 'p') work smoothly.
-* **Special Characters and Symbols:** Uses arrays of size 256, which correctly handles space, numbers, and printable ASCII symbols beyond lowercase letters.
-* **Single Character Strings (e.g., `s = "a"`, `t = "b"`):** Loops execute once without out-of-bounds errors and return `true`.
+* **Two characters mapping to the same target:** e.g., `s = "badc"`, `t = "baba"`. Here, both 'a' and 'c' try to map to 'a'. The `chk` array prevents 'c' from claiming 'a', handling this correctly.
+* **One character mapping to multiple targets:** e.g., `s = "foo"`, `t = "bar"`. 'o' maps to 'a' during loop 1, but fails validation against 'r' during loop 2.
+* **Characters mapping to themselves:** e.g., `s = "paper"`, `t = "title"` (where 'e' maps to 'l' and 'r' maps to 'e'). Same-character mappings work without issue.
+* **Full ASCII range:** Inputs containing digits, spaces, or punctuation work safely because array sizes are set to 256.
+* **Single-character strings:** e.g., `s = "a"`, `t = "z"`. Loops run once, set the mapping, and return `true`.
