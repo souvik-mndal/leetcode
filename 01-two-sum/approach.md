@@ -1,37 +1,33 @@
-![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-54.99%20MB%20(beats%2050.11%25)-yellow?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-1%20ms%20(beats%2088.19%25)-brightgreen?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-56.76%20MB%20(beats%2057.28%25)-yellow?style=for-the-badge)
 
 ---
 
 ## Problem in Plain English
 
-You are given a list of numbers and a **target sum**. Your job is to find **two different numbers** in that list that add up to the target. 
+You are given a list of numbers and a target total sum. Your job is to find two numbers in that list that add up to the target, and return their position numbers (indices) in the list.
 
-Once you find them, return their **positions** (indices) in the list as a pair, like `[0, 1]`.
-
-*   You cannot use the same element twice (you can't pick position `0` twice).
-*   There is always exactly one correct pair in the list.
+*   You can assume there is always exactly one correct pair.
+*   You cannot use the same number position twice.
+*   You can return the two positions in any order.
 
 **Example:**
 If the list is `[2, 7, 11, 15]` and the target is `9`:
-*   `2 + 7 = 9`
-*   `2` is at index `0`, and `7` is at index `1`.
-*   Answer: `[0, 1]`
+The numbers at position `0` (value `2`) and position `1` (value `7`) add up to `9`.
+So, the answer is `[0, 1]`.
 
 ---
 
 ## Intuition
 
-The naive way is to compare every number with every other number. That requires two loops and gets slow very fast.
+The brute-force way to solve this is checking every possible pair, but that is too slow.
 
-Instead, think of it like this: as you look at each number, ask yourself: **"What missing number do I need to reach the target?"**
+Instead, ask a simple math question for every number you look at:
+*"If my current number is `x`, what partner number do I need to reach the `target`?"*
 
-*   Missing number = `target - current number`
+The needed partner is simply `target - x`.
 
-If you keep a quick-lookup notebook (**hash map**) of the numbers you have already seen and where you saw them, you can check if your missing number is already in the notebook. 
-
-*   If it **is** in the notebook, you found your pair!
-*   If it **is not**, write down the current number and its index in your notebook, then move to the next number.
+As you walk through the list, keep a quick-lookup memory notebook (a **Map** or **Hash Table**). Store every number you have seen so far, along with its position. For each new number, check if its missing partner is already written down in your notebook.
 
 ---
 
@@ -39,35 +35,33 @@ If you keep a quick-lookup notebook (**hash map**) of the numbers you have alrea
 
 Here is how the code works step-by-step:
 
-*   **Create a lookup map:** Set up an empty **hash map** (`mp`) to keep track of numbers we have already checked. The key is the number, and the value is its index.
-*   **Loop through the array:** Start scanning the list from left to right using a loop index `i`.
-*   **Calculate the needed value:** Subtract the current number `nums[i]` from `target`. Store this in `rem` (the remainder needed).
-*   **Check the map:** See if `rem` is already stored in our map (`mp.has(rem)`).
-    *   **If found:** Return the current index `i` and the saved index from the map (`mp.get(rem)`). You are done!
-    *   **If not found:** Add the current number and its position to the map (`mp.set(nums[i], i)`) so future numbers can find it.
-*   **Safety return:** Return `[]` at the end as a fallback, though the problem guarantees a solution exists.
+*   **Create a lookup map:** Initialize an empty map (`mp`) to store numbers as keys and their position indices as values.
+*   **Loop through the array:** Go through the list of numbers one by one using a standard `for` loop.
+*   **Calculate the needed partner:** Subtract the current number (`nums[i]`) from the `target` to find the missing remainder (`rem = target - nums[i]`).
+*   **Check the map:** Look to see if `rem` is already saved in the map.
+    *   **If found:** You matched the pair! Return an array containing the current index `i` and the stored index `mp.get(rem)`.
+    *   **If not found:** Save the current number and its index into the map (`mp.set(nums[i], i)`) so future numbers can find it.
+*   **Fallback return:** Return an empty array `[]` if no solution is found (though the problem guarantees one will exist).
 
 ---
 
 ## Time & Space Complexity
 
-*   **Time Complexity:** **O(n)** — We iterate through the list of `n` elements at most once. Looking up or inserting items into a JavaScript `Map` takes **O(1)** (constant time) on average.
-*   **Space Complexity:** **O(n)** — In the worst case, we might store up to `n` items in our map before finding the matching pair.
+*   **Time:** **O(n)** — We loop through the list of $n$ numbers at most once. Looking up and inserting items in a map takes constant time on average (**O(1)**).
+*   **Space:** **O(n)** — In the worst case, we might store up to $n$ numbers in our map before finding the matching pair.
 
 ### Is this optimal?
 
-**Yes, this is already optimal.**
+**Yes, this code is already fully optimal.**
 
-*   **Time:** **O(n)** is the best possible time complexity. You must inspect each element at least once to know if it can form the target sum.
-*   **Space:** **O(n)** is required to achieve **O(n)** time. To lower space to **O(1)**, you would have to use two loops (taking **O(n²)** time) or sort the array first (taking **O(n log n)** time, which also ruins the original indices). 
-
-No further improvements can be made to lower the time complexity.
+*   **Time Optimal:** You must look at each number at least once to know if it forms the sum. Therefore, **O(n)** is the absolute fastest possible time.
+*   **Space Trade-off:** You could reduce memory to **O(1)** space by using two loops to compare every pair, but that would make time complexity **O(n²)** (much slower). The **O(n)** time and **O(n)** space balance is the optimal theoretical solution for an unsorted list.
 
 ---
 
 ## Edge Cases Handled
 
-*   **Duplicate numbers:** Works correctly when the list contains duplicate values (e.g., `nums = [3, 3]`, `target = 6`). The second `3` looks up the first `3` in the map before overwriting it.
-*   **Negative numbers:** Subtraction handles negatives seamlessly (e.g., `nums = [-3, 4, 3]`, `target = 0` correctly matches `-3` and `3`).
-*   **Minimum array size:** Handles the smallest valid input length of 2 elements without errors.
-*   **Target is zero or negative:** Math operations like `target - nums[i]` work identically regardless of sign.
+*   **Duplicate Numbers:** Works for inputs like `nums = [3, 3]`, `target = 6`. Because we check the map *before* adding the second `3`, it safely finds the first `3` without self-matching.
+*   **Negative Numbers:** Works smoothly with negative values (e.g., `nums = [-3, 4, 3]`, `target = 0`). The subtraction logic (`target - nums[i]`) works correctly regardless of sign.
+*   **Minimum Array Size:** Works with the smallest valid input size of 2 elements (e.g., `nums = [1, 2]`).
+*   **Target is Zero or Negative:** Handles targets equal to `0` or negative values without special cases because basic arithmetic holds.
