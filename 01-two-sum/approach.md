@@ -1,67 +1,84 @@
-![Runtime](https://img.shields.io/badge/Runtime-1%20ms%20(beats%2088.19%25)-brightgreen?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-56.76%20MB%20(beats%2057.28%25)-yellow?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-4%20ms%20(beats%2051.49%25)-yellow?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-15.13%20MB%20(beats%209.51%25)-red?style=for-the-badge)
 
 ---
 
-## Problem in Plain English
+## Problem Explained
 
-You are given a list of numbers and a target total sum. Your job is to find two numbers in that list that add up to the target, and return their position numbers (indices) in the list.
+You are given a list of numbers called `nums` and a single target number called `target`. Your goal is to find two different numbers in the list that add up to `target`. 
 
-*   You can assume there is always exactly one correct pair.
-*   You cannot use the same number position twice.
-*   You can return the two positions in any order.
+Once you find those two numbers, return their **index positions** (where they are located in the list, starting from 0).
+
+**Rules:**
+* Exactly one valid pair exists in the list.
+* You cannot use the same element position twice.
+* You can return the two positions in any order.
 
 **Example:**
-If the list is `[2, 7, 11, 15]` and the target is `9`:
-The numbers at position `0` (value `2`) and position `1` (value `7`) add up to `9`.
-So, the answer is `[0, 1]`.
+* Input: `nums = [2, 7, 11, 15]`, `target = 9`
+* Output: `[0, 1]`
+* Why? Because `nums[0]` is `2` and `nums[1]` is `7`. `2 + 7 = 9`.
 
 ---
 
 ## Intuition
 
-The brute-force way to solve this is checking every possible pair, but that is too slow.
+The simple way to solve this is to test every single pair of numbers. However, that gets very slow as the list grows.
 
-Instead, ask a simple math question for every number you look at:
-*"If my current number is `x`, what partner number do I need to reach the `target`?"*
+Instead, ask a different question as you read each number: **"What other number do I need to reach the target?"**
 
-The needed partner is simply `target - x`.
+This missing number is called the **remainder** (`target - current_number`). 
 
-As you walk through the list, keep a quick-lookup memory notebook (a **Map** or **Hash Table**). Store every number you have seen so far, along with its position. For each new number, check if its missing partner is already written down in your notebook.
+If you keep a running memory log of all numbers you have already seen (and where you saw them), you can just check if your missing number is in that memory log. If it is, you immediately have your answer!
 
 ---
 
 ## Approach
 
-Here is how the code works step-by-step:
+Here is how the code implements this memory log:
 
-*   **Create a lookup map:** Initialize an empty map (`mp`) to store numbers as keys and their position indices as values.
-*   **Loop through the array:** Go through the list of numbers one by one using a standard `for` loop.
-*   **Calculate the needed partner:** Subtract the current number (`nums[i]`) from the `target` to find the missing remainder (`rem = target - nums[i]`).
-*   **Check the map:** Look to see if `rem` is already saved in the map.
-    *   **If found:** You matched the pair! Return an array containing the current index `i` and the stored index `mp.get(rem)`.
-    *   **If not found:** Save the current number and its index into the map (`mp.set(nums[i], i)`) so future numbers can find it.
-*   **Fallback return:** Return an empty array `[]` if no solution is found (though the problem guarantees one will exist).
+* **Create a memory map:** Set up a map data structure (`map<int, int> mp`) to keep track of numbers we have seen as keys, and their array index positions as values.
+* **Loop through the array:** Start at the beginning (index `0`) and move right one number at a time.
+* **Calculate the missing pair:** For the current number, calculate `rem = target - nums[i]`. This is the exact number needed to reach the target.
+* **Check the memory map:** Look up if `rem` is already stored in our map.
+* **If found:** Return a pair containing the current index `i` and the stored index of `rem` (`mp[rem]`).
+* **If not found:** Save the current number and its index into the map (`mp[nums[i]] = i`) so future numbers can look it up.
+* **Repeat:** Move to the next number until the matching pair is found.
 
 ---
 
 ## Time & Space Complexity
 
-*   **Time:** **O(n)** — We loop through the list of $n$ numbers at most once. Looking up and inserting items in a map takes constant time on average (**O(1)**).
-*   **Space:** **O(n)** — In the worst case, we might store up to $n$ numbers in our map before finding the matching pair.
+**Current Complexity:**
+* **Time:** **O(n log n)** — We loop through all $n$ numbers once. Inside the loop, we search and insert into `std::map`. A standard `map` in C++ uses a balanced tree structure, so searching or inserting takes **O(log n)** time (logarithmic time, meaning work grows slowly as input grows).
+* **Space:** **O(n)** — In the worst-case scenario, we store almost every number from the list inside our map.
 
-### Is this optimal?
+**Can it be improved?**
+Yes. You can swap `std::map` for `std::unordered_map`. An `unordered_map` uses a **hash table** (a data structure that maps keys to values instantly using math), which drops search and insert times from **O(log n)** to **O(1)** (constant time, meaning it takes the same time regardless of size).
 
-**Yes, this code is already fully optimal.**
+Here is the key change:
 
-*   **Time Optimal:** You must look at each number at least once to know if it forms the sum. Therefore, **O(n)** is the absolute fastest possible time.
-*   **Space Trade-off:** You could reduce memory to **O(1)** space by using two loops to compare every pair, but that would make time complexity **O(n²)** (much slower). The **O(n)** time and **O(n)** space balance is the optimal theoretical solution for an unsorted list.
+```cpp
+// Change 'map' to 'unordered_map' for faster lookups
+unordered_map<int, int> mp;
+
+for (int i = 0; i < nums.size(); i++) {
+    int rem = target - nums[i];
+    if (mp.find(rem) != mp.end()) {
+        return {i, mp[rem]};
+    }
+    mp[nums[i]] = i; // Simplified insertion
+}
+```
+
+* **Improved Complexity:** **Time:** **O(n)** on average. **Space:** **O(n)**.
+* **Theoretical Best Complexity:** **O(n)** time is the absolute fastest possible because you must look at each number at least once to know if it forms the sum. The improved version with `unordered_map` reaches this theoretical limit.
 
 ---
 
 ## Edge Cases Handled
 
-*   **Duplicate Numbers:** Works for inputs like `nums = [3, 3]`, `target = 6`. Because we check the map *before* adding the second `3`, it safely finds the first `3` without self-matching.
-*   **Negative Numbers:** Works smoothly with negative values (e.g., `nums = [-3, 4, 3]`, `target = 0`). The subtraction logic (`target - nums[i]`) works correctly regardless of sign.
-*   **Minimum Array Size:** Works with the smallest valid input size of 2 elements (e.g., `nums = [1, 2]`).
-*   **Target is Zero or Negative:** Handles targets equal to `0` or negative values without special cases because basic arithmetic holds.
+* **Duplicate values:** Handles inputs like `nums = [3, 3]` and `target = 6`. The code checks if the needed pair (`3`) is already in the map *before* adding the current `3` to the map. This prevents a number from pairing with itself at the exact same index.
+* **Negative numbers:** Handles lists with negative values like `nums = [-3, 4, 3]` and `target = 0`. Simple subtraction (`0 - (-3) = 3`) works correctly for negative values.
+* **Minimum list length:** Handles the smallest possible list size of 2 elements (`nums.length >= 2`).
+* **Target with large values:** Handles numbers up to 1 billion without integer overflow because standard 32-bit integers can hold calculations up to ~2 billion.
