@@ -1,80 +1,76 @@
-![Runtime](https://img.shields.io/badge/Runtime-Unknown%20(beats%20Unknown)-lightgrey?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-Unknown%20(beats%20Unknown)-lightgrey?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-3%20ms%20(beats%2066.36%25)-green?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-15.23%20MB%20(beats%208.47%25)-red?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-You are given a list of numbers called `nums` and a goal number called `target`. Your job is to find the **indices** (the position numbers, starting at `0`) of two numbers in the list that add up to the `target`.
+You are given a list of integers called `nums` and a single goal integer called `target`. Your task is to find two distinct numbers in `nums` that add up to `target`, and return their position numbers (their **indices**, starting at 0).
 
-* You cannot use the exact same position twice.
-* Every input is guaranteed to have exactly one valid answer.
+You can assume there is always exactly one correct pair, and you cannot use the exact same position twice.
 
 **Example:**
 * **Input:** `nums = [2, 7, 11, 15]`, `target = 9`
 * **Output:** `[0, 1]`
-* **Why:** The number at index `0` is `2`, and the number at index `1` is `7`. Since $2 + 7 = 9$, we return their positions `[0, 1]`.
+* **Why:** The number at index 0 is `2`, and the number at index 1 is `7`. Since `2 + 7 = 9`, we return their positions `[0, 1]`.
 
 ---
 
 ## Intuition
 
-Instead of checking every possible pair of numbers (which is slow), you can solve this in a single pass using simple math.
+The naive way is to pick every number and compare it with every other number. That requires checking pairs over and over, which is slow.
 
-As you walk through the list, ask yourself: *"What second number do I need to reach the target?"* 
+Instead, think about it like this: as you walk through the array, if you are looking at a number $X$, you already know the exact partner number you need. That missing partner is `target - X`. 
 
-That needed number is `rem = target - current_number`.
-
-To make lookups fast, keep a memory log (a lookup table) of numbers you have already walked past, along with their positions. For each number:
-1. Check if the needed number (`rem`) is already in your memory log.
-2. If it is, you found your match!
-3. If it is not, save the current number and its position in your log and move to the next number.
+The "aha!" moment is using a lookup table (a **map** or **hash table**) as a memory bank. As you visit each number, you ask: *"Have I already seen my needed partner in my memory bank?"*
+* If **yes**, you found the match! Grab the current position and the stored partner's position.
+* If **no**, write the current number and its position into your memory bank, then move to the next number.
 
 ---
 
 ## Approach
 
-Here is how the given C++ code implements this logic step-by-step:
+Here is how the code executes this logic step-by-step:
 
-* **Create a map:** Set up a `std::map` named `mp` to store previously seen numbers as keys and their array positions as values.
-* **Loop through the list:** Start a `for` loop from index `i = 0` to the end of `nums`.
-* **Calculate the missing piece:** Find the required matching number by calculating `rem = target - nums[i]`.
-* **Search the map:** Use `mp.find(rem)` to check if `rem` is already stored in the map.
-* **Handle a match:** If `rem` is found in the map, a matching pair exists. (Note: The provided code contains a placeholder return statement, but the logic intends to return the index of `rem` and the current index `i`).
-* **Store for later:** If `rem` is not in the map, store the current number and its index in the map using `mp[nums[i]] = i`.
-* **Repeat:** Move to the next index until the matching pair is found.
+* **Create a map:** Set up an ordered map called `mp` where keys are the numbers seen so far, and values are their array index positions.
+* **Loop through the array:** Start at index `i = 0` and inspect each number `nums[i]` one by one.
+* **Calculate the missing partner:** Compute `rem = target - nums[i]`. This is the exact number needed to hit `target`.
+* **Check memory:** Use `mp.find(rem)` to look up if `rem` was saved in `mp` during an earlier step.
+* **Return if found:** If `rem` exists in `mp`, immediately return the current index `i` and the partner's stored index `mp[rem]`.
+* **Save for later:** If `rem` is not in `mp`, add the current number and its index to `mp` using `mp[nums[i]] = i`.
+* **Fallback:** Return `{1, 1}` at the end as a default safeguard (this line is never reached because a valid answer is guaranteed).
 
 ---
 
 ## Time & Space Complexity
 
-**Current Complexity:**
-* **Time:** **$O(n \log n)$** — The loop runs $n$ times. In C++, `std::map` is built as a balanced binary tree, so searching or inserting takes $O(\log n)$ time per step.
-* **Space:** **$O(n)$** — In the worst case, the map stores up to $n$ elements.
+* **Time Complexity:** **$O(n \log n)$** — The code uses `std::map`, which stores elements in a balanced tree structure. Searching and inserting into a `std::map` takes $O(\log n)$ time. Doing this for $n$ elements gives a total time of $O(n \log n)$.
+* **Space Complexity:** **$O(n)$** — In the worst case, we store up to $n$ elements in our map.
 
 ### Can this be improved?
 
-**Yes.** We can improve the time complexity from $O(n \log n)$ to **$O(n)$** by replacing `std::map` with `std::unordered_map` (a **hash table**, which offers fast instant lookups). We can also fix the return statement logic.
+**Yes.** We can swap `std::map` (ordered map) for `std::unordered_map` (hash table). 
 
-**Code changes:**
+Searching and inserting in an `unordered_map` takes **$O(1)$ average time** instead of $O(\log n)$ time because it uses direct key hashing rather than traversing a tree.
+
+**Key code change:**
 ```cpp
-// 1. Switch to a hash table for O(1) average lookups
-unordered_map<int, int> mp;
+// Change this line:
+// map<int,int> mp;
 
-// 2. Return the stored index and current index when found
-if (mp.find(rem) != mp.end()) {
-    return {mp[rem], i};
-}
+// To this:
+unordered_map<int, int> mp;
 ```
 
-* **Improved Time Complexity:** **$O(n)$** on average — Iterating through the list takes $O(n)$ time, and looking up items in a hash table takes $O(1)$ average time.
-* **Improved Space Complexity:** **$O(n)$** — To store up to $n$ elements in the hash map.
-* **Is this optimal?** **Yes.** $O(n)$ is the theoretical best time complexity for an unsorted list because you must look at each element at least once to find the pair.
+* **Improved Time Complexity:** **$O(n)$ average** — We visit each of the $n$ numbers once, and map lookups take $O(1)$ time on average.
+* **Improved Space Complexity:** **$O(n)$** — We store up to $n$ numbers in the hash map.
+* **Theoretical Best:** **$O(n)$ time and $O(n)$ space** is the absolute theoretical best for this problem because we must inspect each number at least once. The `unordered_map` version reaches this optimal limit.
 
 ---
 
 ## Edge Cases Handled
 
-* **Negative Numbers:** Works automatically with negative values (e.g., `nums = [-3, 4, 3]`, `target = 0`) because basic subtraction `target - nums[i]` correctly handles signs.
-* **Duplicate Values:** Correctly handles lists with repeated numbers (e.g., `nums = [3, 3]`, `target = 6`). When checking the second `3`, the code looks up the first `3` in the map before overwriting it.
-* **Minimum Array Length:** Works for the smallest allowed input size of 2 elements (as defined by constraints).
+* **Duplicate values in the array:** For inputs like `nums = [3, 3]` and `target = 6`, the code works correctly. On the first `3` (index 0), it looks for `3` in `mp` (not found) and stores `mp[3] = 0`. On the second `3` (index 1), it looks for `3`, finds it at index 0, and returns `[1, 0]`.
+* **Negative numbers:** Handles negative values correctly (e.g., `nums = [-3, 4, 3]`, `target = 0`), because subtraction `target - nums[i]` handles negative arithmetic seamlessly.
+* **Minimum size array:** Works when `nums` contains only 2 elements (the smallest valid input constraint).
+* **Large input values:** Numbers up to $10^9$ fit inside standard 32-bit signed integers (`int`), preventing integer overflow during subtraction.
