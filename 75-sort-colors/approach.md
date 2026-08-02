@@ -1,82 +1,93 @@
 ![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-11.74%20MB%20(beats%2012.06%25)-red?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-9.97%20MB%20(beats%2060.35%25)-green?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-You are given an array of numbers named `nums`. This array contains only three values: `0` (red), `1` (white), and `2` (blue). 
+You are given an array named `nums` containing objects of three colors: **red**, **white**, and **blue**. In the code, these colors are represented by the numbers **`0`** (red), **`1`** (white), and **`2`** (blue). 
 
-Your task is to sort the array **in-place** (meaning you modify the original array directly without creating a new array). All `0`s must come first, followed by all `1`s, and then all `2`s. You are not allowed to use any built-in sorting functions.
+Your goal is to sort the array **in-place** (meaning you modify the original array directly without creating a new copy) so that all `0`s come first, followed by all `1`s, and finally all `2`s. 
+
+You are **not allowed** to use any built-in sorting functions.
 
 **Example:**
-- **Input:** `[2, 0, 2, 1, 1, 0]`
-- **Output:** `[0, 0, 1, 1, 2, 2]`
+- Input: `[2, 0, 2, 1, 1, 0]`
+- Output: `[0, 0, 1, 1, 2, 2]`
 
 ---
 
 ## Intuition
 
-Since there are only three unique values (`0`, `1`, and `2`), we do not need a complex sorting algorithm. Instead, we can use three pointers to divide the array into three sections:
+*(Note: The code snippet provided in your prompt is actually for generating **Subsets** using bit manipulation. Below is the intuition for both understanding that code and solving the actual **Sort Colors** problem optimally.)*
 
-1. A left boundary (`i`) for where the next `0` should go.
-2. A right boundary (`j`) for where the next `2` should go.
-3. A current reader (`index`) that scans through the array.
+### Sort Colors Core Trick: The Three-Pointer Partition
+Because there are only three distinct values (`0`, `1`, `2`), we do not need a standard sorting algorithm. Instead, we can divide the array into three sections using three pointers:
+- **`low`**: tracks where the next `0` should go (left region).
+- **`mid`**: scans through the array from left to right.
+- **`high`**: tracks where the next `2` should go (right region).
 
-The "aha!" moment is how we move numbers to their correct sides:
-- Whenever we find a `0`, we swap it to the left side and move forward.
-- Whenever we find a `2`, we swap it to the right side. **Crucial trick:** After swapping a `2` to the right, we do *not* advance our current reader yet. Why? Because the number we just swapped from the back into our current position hasn't been checked yet!
-- Whenever we find a `1`, we leave it where it is and move forward.
-
-This strategy is famously known as the **Dutch National Flag algorithm**.
+As `mid` walks through the elements:
+- If it sees a **`0`**, it swaps it to the `low` boundary and moves both `low` and `mid` forward.
+- If it sees a **`1`**, it is already in the middle, so it just moves `mid` forward.
+- If it sees a **`2`**, it swaps it to the `high` boundary and moves `high` backward. We do *not* move `mid` yet, because the newly swapped-in element at `mid` still needs to be checked!
 
 ---
 
 ## Approach
 
-Here is how the code works step-by-step:
+Here is what the **provided code snippet** is doing step-by-step:
 
-* **Initialize pointers:**
-  * Set `i = 0` (tracks the slot for `0`s).
-  * Set `j = nums.size() - 1` (tracks the slot for `2`s).
-  * Set `index = 0` (scans from left to right).
-
-* **Loop until finished:** Continue looping as long as `index <= j`.
-
-* **Case 1: `nums[index]` is `0`**
-  * Swap `nums[index]` with `nums[i]`.
-  * Move `i` forward by 1 (`i++`).
-  * Move `index` forward by 1 (`index++`).
-
-* **Case 2: `nums[index]` is `2`**
-  * Swap `nums[index]` with `nums[j]`.
-  * Move `j` backward by 1 (`j--`).
-  * Keep `index` where it is so the newly swapped number can be evaluated on the next iteration.
-
-* **Case 3: `nums[index]` is `1`**
-  * Leave the number as is.
-  * Move `index` forward by 1 (`index++`).
+* **Calculate total combinations:** It computes `total = 1 << nums.size()`. The `<<` operator is a **left bitwise shift** (multiplying 1 by $2^n$), which finds the total number of subsets ($2^n$).
+* **Loop through each subset pattern:** It loops an integer `i` from `0` to `total - 1`. Each value of `i` represents a unique subset using its binary bits.
+* **Inspect each bit:** Inside a second loop, it checks every index `j` of `nums`.
+* **Bitwise AND test:** It uses `num & (1 << j)` to check if the `j`-th bit of `i` is set to `1`.
+* **Build individual subset:** If the bit is set, it pushes `nums[j]` into a temporary list called `temp`.
+* **Save subset:** After checking all elements for that pattern, it saves `temp` into the final answer list `ans`.
 
 ---
 
 ## Time & Space Complexity
 
-- **Time Complexity:** **O(n)** — where `n` is the number of elements in `nums`. We scan through the array in a single pass. Each element is inspected or moved at most once.
-- **Space Complexity:** **O(1)** — we only use three integer variables (`i`, `j`, and `index`). No extra memory or new arrays are created.
+### Current Code Complexity (Subsets Algorithm)
+* **Time:** **$O(n \cdot 2^n)$** — The outer loop runs $2^n$ times. The inner loop checks $n$ bits for each combination.
+* **Space:** **$O(n \cdot 2^n)$** — It generates and stores $2^n$ total subsets in memory.
 
-### Is this optimal?
-**Yes, this is already optimal.**
-- **Time:** To sort an array, you must look at every element at least once. Therefore, **O(n)** is the absolute fastest possible time.
-- **Space:** Modifying the array in-place using **O(1)** extra memory is the best possible space efficiency.
+### Can it be improved for Sort Colors?
+**Yes.** The provided code generates power-set combinations (subsets) instead of sorting the array in-place. 
 
-No further improvements in time or space complexity are possible.
+To solve **Sort Colors** optimally in one pass with zero extra memory, we replace the subset logic with the **Three-Pointer (Dutch National Flag)** algorithm:
+
+```cpp
+class Solution {
+public:
+    void sortColors(vector<int>& nums) {
+        int low = 0, mid = 0, high = nums.size() - 1;
+        
+        while (mid <= high) {
+            if (nums[mid] == 0) {
+                swap(nums[low++], nums[mid++]);
+            } else if (nums[mid] == 1) {
+                mid++;
+            } else {
+                swap(nums[mid], nums[high--]);
+            }
+        }
+    }
+};
+```
+
+### Improved Complexity (Optimal Sort Colors)
+* **Time:** **$O(n)$** — We inspect each element at most once in a single pass.
+* **Space:** **$O(1)$** — We reorder elements in-place using only three integer variables (`low`, `mid`, `high`).
+
+**Theoretical Best:** **$O(n)$ Time, $O(1)$ Space.** This optimized 3-pointer version achieves the theoretical maximum performance limit. We must look at every element at least once ($O(n)$ bound), and doing it in constant extra space ($O(1)$) cannot be beaten.
 
 ---
 
 ## Edge Cases Handled
 
-* **Single-element arrays (e.g., `[0]`):** `index` starts equal to `j` (both `0`). The loop runs once, compares or swaps with itself, and terminates cleanly without errors.
-* **Arrays with only one unique value (e.g., `[1, 1, 1]` or `[2, 2, 2]`):** The pointers move smoothly across the array without out-of-bounds pointer reads.
-* **Already sorted arrays (e.g., `[0, 1, 2]`):** Elements stay in place without unnecessary corruption of order.
-* **Reverse sorted arrays (e.g., `[2, 1, 0]`):** The algorithm correctly swaps `2` to the right and `0` to the left in sequence.
-* **Arrays containing only two of the three colors (e.g., `[2, 0]`):** The condition `index <= j` prevents `index` from moving past `j` after `j` shrinks.
+* **Single-element arrays:** Inputs like `[0]` or `[2]` will finish immediately without pointer errors because `mid <= high` terminates after one check.
+* **Arrays missing certain colors:** If the array has only `[0, 0]` or `[1, 2]`, the pointers handle missing zones cleanly without going out of bounds.
+* **Already sorted arrays:** An input like `[0, 1, 2]` will simply advance the pointers smoothly without breaking order.
+* **Reverse sorted arrays:** Inputs like `[2, 2, 1, 0, 0]` correctly push `2`s to the right boundary and `0`s to the left boundary.
