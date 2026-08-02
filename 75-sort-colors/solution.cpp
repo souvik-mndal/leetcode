@@ -1,20 +1,18 @@
 class Solution {
 public:
-    void sortColors(vector<int>& nums) {
-        int i=0,j=nums.size()-1;
-        int index = 0;
-        while( index <= j ){
-            if( nums[index] == 0 ){
-                swap( nums[i] , nums[index]);
-                index++;i++;
+    vector<vector<int>> subsets(vector<int>& nums) {
+        vector<vector<int>>ans;
+        int total = 1 << nums.size();
+        for( int i=0 ; i<total ; i++ ){
+            int num = i;
+            vector<int>temp;
+            for( int j=0 ; j<nums.size() ; j++ ){
+                if( num & ( 1 << j )){
+                    temp.push_back(nums[j]);
+                }
             }
-            else if( nums[index] == 2 ){
-                swap( nums[j] , nums[index] );
-                j--;
-            }
-            else{
-                index++;
-            }
+            ans.push_back(temp);
         }
+        return ans;
     }
 };
