@@ -1,5 +1,5 @@
-![Runtime](https://img.shields.io/badge/Runtime-23%20ms%20(beats%2065.22%25)-green?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-17.33%20MB%20(beats%2040.58%25)-yellow?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-44%20ms%20(beats%2016.48%25)-red?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-17.35%20MB%20(beats%2029.01%25)-orange?style=for-the-badge)
 
 ---
 
