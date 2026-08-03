@@ -1,74 +1,48 @@
-![Runtime](https://img.shields.io/badge/Runtime-4%20ms%20(beats%2051.45%25)-yellow?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-15.18%20MB%20(beats%209.52%25)-red?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-95.15%20MB%20(beats%2062.05%25)-green?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-Imagine you have a list of numbers and a target number. Your goal is to find two numbers in that list that add up to the target number. 
+Imagine you have a row of numbers, like [2, 7, 11, 15], and someone gives you a target number, like 9. Your job is to find the positions (indices) of two numbers in that row that add up to your target. 
 
-Once you find them, you need to return their positions in the list (their indices). 
+For example, looking at [2, 7, 11, 15], the numbers 2 and 7 add up to 9. Since 2 is at position 0 and 7 is at position 1, your answer would be [0, 1]. 
 
-For example, if your list is `[2, 7, 11, 15]` and your target is `9`, you look at the numbers and see that `2` plus `7` equals `9`. Because `2` is at position `0` and `7` is at position `1`, your answer is `[0, 1]`. 
+You are guaranteed that there is always exactly one solution, you cannot use the exact same number twice, and you can return the two positions in any order.
 
-The rules state that there is always exactly one correct pair, you cannot use the exact same number twice, and you can return the positions in any order.
-
----
+*(Note: The code snippet provided in the prompt is actually for a completely different problem called "Median of Two Sorted Arrays", but these notes will focus on solving the Two Sum problem described above).*
 
 ## Intuition
 
-The "aha" moment for this problem is asking yourself: **What am I missing?**
+The most obvious way to solve this is to test every single pair of numbers using two nested loops. That means checking every number against every other number until you find a pair that hits the target. But that takes a long time if the array is huge because your work grows quadratically (O(n^2)).
 
-If you look at any number in the list, you can figure out its missing partner right away. For example, if your target is `9` and you are currently looking at `2`, your missing partner (the **remainder**) is `9 - 2`, which is `7`. 
+The "aha" moment is flipping how you think about the math. If you are looking at a number, say 2, and your target is 9, you already know you need a 7 to make it work (because 9 - 2 = 7). 
 
-Instead of checking every number against every other number using two loops (which is slow), you can walk through the list just once. As you visit each number, you save it in a notebook (a **map**, which is a container that stores pairs of keys and values) along with its position. 
+Instead of searching forward through the rest of the array, what if you keep a memory log (a hash table or dictionary) of the numbers you have **already** seen as you walk through the array? 
 
-Before saving a new number, you check your notebook: *Have I already seen the exact number I need to reach the target?* If yes, you instantly have both positions and you are done. If no, you write down the current number and keep moving.
-
----
+As you look at each new number, you simply ask your memory log: "Have I seen the number I need (target minus current number) yet?" If yes, you instantly have your answer! If no, you write down your current number and its position in your memory log and move on. This lets you solve the problem in a single pass through the array.
 
 ## Approach
 
-Here is the step-by-step breakdown of how the code works:
-
-* **Create a notebook:** We set up a map called `mp` to store numbers as keys and their positions (indices) as values.
-* **Start a loop:** We use a `for` loop to look at every number in the `nums` list one by one, from index `0` to the end.
-* **Calculate the missing piece:** For the current number at index `i`, we subtract it from the target to find the remainder needed (`rem = target - nums[i]`).
-* **Check the notebook:** We look inside our map (`mp`) to see if the remainder has already been saved.
-* **Return if found:** If the remainder is found in our map, we have our two numbers. We return the current index `i` and the saved position of the remainder `mp[rem]`.
-* **Save if not found:** If the remainder is not in our map yet, we save the current number and its index into our map (`mp[nums[i]] = i`) so future numbers can check against it.
-* **Fallback return:** At the very end of the function, a fallback `return {1, 1};` is included, though the problem guarantees a solution will always be found before reaching this point.
-
----
+* **Initialize a Hash Map:** Create an empty hash map (in C++, an unordered_map) to store numbers you have visited as keys and their positions (indices) as values.
+* **Loop through the array:** Use a for loop to look at each number in the nums array one by one, keeping track of its index.
+* **Calculate the complement:** For the current number, subtract it from the target to find the number you need (let us call it the complement).
+* **Check the map:** Look inside your hash map to see if that complement is already stored there.
+* **Return if found:** If the complement exists in your map, it means you have previously visited it. Return the position of that complement (stored in the map) and your current index.
+* **Save if not found:** If the complement is not in your map yet, add the current number and its index to your map, then continue to the next iteration of the loop.
 
 ## Time & Space Complexity
 
-* **Time:** O(n log n) — We loop through the list of length `n` once. Inside the loop, we search and insert into a standard `map`. In C++, a standard `map` is built as a balanced binary search tree, meaning every search and insertion takes O(log n) time. Doing this for all `n` elements gives a total time complexity of O(n log n).
-* **Space:** O(n) — In the worst-case scenario (where the matching pair is at the very end of the list), we store almost every number from the list into our map, taking up linear memory proportional to the size of the input.
+* **Time:** O(n) — You iterate through the array of size n just once. Looking up an item in a hash map takes O(1) time on average. Therefore, doing a lookup for each of the n elements results in linear time.
+* **Space:** O(n) — In the worst-case scenario (where the answer is at the very end of the array, or no match is found early), you store every single number from the array into the hash map, which takes space proportional to the size of the input.
 
-**Can this be improved?**
+**Is this already the most optimal possible complexity for this problem, or can it be improved?**
 
-Yes, it can be made faster. Because we are using a standard `map` (which keeps things sorted and takes O(log n) per operation), we can speed up lookups by switching to an **unordered_map** (a hash table). An unordered map gives us an average lookup and insertion time of O(1) (constant time).
-
-Here is the key change to optimize the code:
-```cpp
-// Change this line:
-// map<int, int> mp;
-
-// To this:
-unordered_map<int, int> mp;
-```
-
-With this change:
-* **Improved Time Complexity:** O(n) on average, because looking up items in a hash table takes O(1) time instead of O(log n).
-* **Improved Space Complexity:** Still O(n) to store the elements in the hash table.
-
-**Theoretical limit:** O(n) time is the absolute best possible complexity for this problem because you must look at (or at least consider) every element in the array at least once. Our improved version with the unordered map reaches this theoretical limit.
-
----
+Yes, this is already the most optimal possible time complexity for this problem. You must look at the elements in the array at least once to find the solution, which inherently takes O(n) time. A hash map allows us to check for the complement in constant O(1) time, bringing the overall time complexity down from O(n^2) to O(n). No further time improvement is possible.
 
 ## Edge Cases Handled
 
-* **Duplicate numbers:** If the input is `[3, 3]` and the target is `6`, the first `3` is added to the map. When the loop reaches the second `3`, it checks the map, finds the first `3`, and successfully returns `[1, 0]`.
-* **Negative numbers:** The math `target - nums[i]` works correctly with negative numbers because subtracting a negative number properly adds its absolute value.
-* **Large arrays and values:** The constraints allow arrays up to `10^4` elements and number values up to `10^9`. The integer types used in C++ handle these ranges without overflowing during simple subtraction.
+* **Duplicate Numbers:** If the array contains identical numbers (like [3, 3] with target 6), the code handles this safely because it checks the hash map *before* adding the current number. When it sees the second 3, it finds the first 3 already sitting in the map and successfully returns both indices.
+* **Negative Numbers:** The logic works seamlessly with negative numbers because standard subtraction (target minus current number) naturally accounts for signs (e.g., target 5 minus -3 equals 8).
+* **Minimum Array Length:** Constraints state the array length is at least 2, so the loop will always have enough elements to check without running into out-of-bounds errors or empty array crashes.
