@@ -2,7 +2,7 @@ using ll = long long;
 
 class Solution {
 
-    static const int LIM = 1000000;
+    static const int LIM = 10000000;
 
     ll C(int n, int r) {
         if (r > n) return 0;
@@ -83,7 +83,7 @@ public:
 
         string second = first;
         reverse(second.begin(), second.end());
-        //return
+        //returns
         return first + mid + second;
     }
 };
