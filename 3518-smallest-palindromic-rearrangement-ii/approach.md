@@ -1,85 +1,102 @@
-![Runtime](https://img.shields.io/badge/Runtime-44%20ms%20(beats%2016.48%25)-red?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-17.35%20MB%20(beats%2029.01%25)-orange?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-30%20ms%20(beats%2028.93%25)-orange?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-17.33%20MB%20(beats%2029.01%25)-orange?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-You are given a palindromic string `s` (a string that reads the same backward as forward) and an integer `k`. 
+You are given a string `s` that is already a palindrome (a word that reads the same backward as forward, like "abba" or "bacab"). You are also given an integer `k`.
 
-You need to find all unique ways to rearrange `s` such that the new string is still a palindrome. If you sort all these unique palindromes in **alphabetical order** (lexicographical order), your goal is to return the **$k$-th string** in that list. 
+Your task is to reorder the letters of `s` to form all possible unique palindromes, sort those palindromes in alphabetical order, and return the `k`-th palindrome from that sorted list.
 
-If there are fewer than `k` possible unique palindromes, return an empty string `""`.
+If `k` is larger than the total number of unique palindromes you can form, return an empty string `""`.
 
 ### Example
-For `s = "abba"` and `k = 2`:
-* The unique palindromes made from these letters are `"abba"` and `"baab"`.
-* Alphabetically sorted: 1st is `"abba"`, 2nd is `"baab"`.
-* Since `k = 2`, the answer is `"baab"`.
+If `s = "bacab"` and `k = 1`:
+* The unique palindromes made from these letters are `"abcba"` and `"bacab"`.
+* Alphabetically sorted: 1st = `"abcba"`, 2nd = `"bacab"`.
+* For `k = 1`, the answer is `"abcba"`.
 
 ---
 
 ## Intuition
 
-A palindrome is completely determined by its **first half**. Once you know the first half, the second half is just its reversed mirror image. If the original string has an odd length, the middle character is fixed and sits right in the center.
+A palindrome is symmetrical. The second half is just a mirrored copy of the first half. If the string has an odd length, there is one fixed character in the exact middle.
 
-Because of this, we do not need to build the whole string at once. We only need to find the **$k$-th smallest arrangement of the first half**.
+Because of this symmetry, **we only need to build the first half of the string**. Once the first half is built, the middle character (if any) and the reversed first half are automatically decided.
 
-To build the first half character by character (from left to right):
-1. At each position, we try placing the smallest available letter (e.g., `'a'`, then `'b'`, then `'c'`).
-2. If we place a letter, we count **how many valid full arrangements** can be formed using the remaining unused letters.
-3. If that count is at least `k`, it means our answer lies within this letter choice! So, we keep this letter and move to the next position.
-4. If that count is less than `k`, our answer is beyond this group. We subtract the count from `k` and try the next larger letter.
+To build the $k$-th smallest first half:
+1. We construct it letter by letter, from left to right.
+2. For each position, we try candidate letters in alphabetical order ('a', then 'b', 'c', and so on).
+3. For each letter, we calculate: *"If we put this letter here, how many valid combinations can be made with the remaining letters?"*
+4. If that count is at least `k`, our desired string **must** start with this letter. We lock it in and move to the next character position.
+5. If that count is smaller than `k`, it means our answer lies further down the list. We subtract that count from `k` and try the next candidate letter.
 
-Since `k` is at most $1,000,000$, any letter combination count larger than $1,000,000$ can be safely **capped at $1,000,001$**. This simple cap prevents large numbers from overflowing standard integer limits!
+Since `k` is at most $10^6$, any combination count larger than $10^6$ can be capped at $10^6 + 1$. This prevents huge numbers from overflowing integer limits.
 
 ---
 
 ## Approach
 
-1. **Count character frequencies**: Count how many times each letter (`'a'` to `'z'`) appears in `s`.
-2. **Split into half and middle**:
-   * Divide each letter count by 2 to get the pool of letters available for the first half (`half`).
-   * If a letter count is odd, store that letter in `mid` (there will be at most one odd letter).
-3. **Check total possibilities**: Calculate the total possible unique arrangements of the first half. If the total is less than `k`, return `""`.
-4. **Build the first half (Position by Position)**:
-   * Loop through each index of the first half string.
-   * Try each letter `c` from `'a'` to `'z'`:
-     * If letter `c` is available, temporarily take one away from `half`.
-     * Calculate `cnt`, the number of ways to arrange the remaining letters in `half`.
-     * **If `cnt >= k`**: This letter `'a' + c` is correct for this position! Append it to `first` and move to the next position.
-     * **If `cnt < k`**: Subtract `cnt` from `k`, return the letter back to `half`, and try the next letter choice.
-5. **Assemble the final palindrome**: Combine `first + mid + reverse(first)` and return it.
+Here is how the code works, step-by-step:
+
+* **Count Frequencies:** Count how many times each character appears in `s`.
+* **Split into First Half and Middle:**
+  * Divide each letter's count by 2 to get the pool of characters available for the first half (`half`).
+  * If a letter has an odd total count, save one copy of it in `mid` (the center character).
+* **Check Feasibility:** Compute the total number of unique arrangements possible using `half`. If total arrangements < `k`, return `""`.
+* **Build First Half (Position by Position):**
+  * Loop through each position of the first half from left to right.
+  * Try characters `c` from 'a' to 'z':
+    * If `half[c] == 0`, skip it (no characters of this type left).
+    * Temporarily place character `c` by subtracting 1 from `half[c]`.
+    * Calculate `cnt`, the number of ways to arrange all remaining unused characters in `half`.
+    * If `cnt >= k`: character `c` is the correct choice for this position. Keep `half[c]` decremented, append `c` to the result, and break to move to the next position.
+    * If `cnt < k`: character `c` is not large enough to reach `k`. Subtract `cnt` from `k` (`k -= cnt`), restore `half[c]++`, and try the next letter 'c + 1'.
+* **Construct Final String:** Assemble the full result: `first_half + mid + reverse(first_half)` and return it.
 
 ---
 
 ## Time & Space Complexity
 
-Let $N$ be the length of string `s`, and $\Sigma = 26$ be the alphabet size.
-
-* **Time Complexity:** $O(N \cdot \Sigma^2)$ — The first half has $N/2$ positions. For each position, we iterate over up to $\Sigma$ candidate letters. For each candidate, we call `ways()`, which does $O(\Sigma)$ operations. Since $\Sigma = 26$ is constant, this runs in $O(N)$ time with a small constant factor ($N/2 \times 26 \times 26 \approx 338 N$ operations).
-* **Space Complexity:** $O(N)$ — Memory used to store the output string and frequency arrays of fixed size 26.
+### Current Complexity
+* **Time Complexity:** **O(N^2)** where N is the length of string `s`.
+  * *Why:* The first half has length `N / 2`. For each position, we try up to 26 characters. For each character, `ways(half)` calculates combinations by looping over 26 characters and calling `C(n, r)`, which takes up to `O(N)` steps. Total time is roughly `(N / 2) * 26 * 26 * N`, which simplifies to `O(N^2)`.
+* **Space Complexity:** **O(N)**
+  * *Why:* Frequency arrays take fixed space `O(26)`, but storing strings `first`, `second`, and `mid` takes space proportional to string length `N`.
 
 ### Can it be improved?
+**Yes.** Instead of recalculating combinations from scratch using `ways(half)` at every step, we can compute the number of ways in **O(1)** time using simple arithmetic.
 
-**Yes!** Right now, `ways()` recalculates the total permutations from scratch in $O(\Sigma)$ time for every letter test. We can instead maintain the total count dynamically in $O(1)$ time when trying a character, because picking a character `c` changes the available permutations by a simple ratio: 
+When placing character `c` at a position with `rem_len` remaining slots, the number of valid arrangements starting with `c` is:
 
-$$\text{new\_ways} = \frac{\text{old\_ways} \cdot \text{count}(c)}{\text{remaining\_length}}$$
-
-```cpp
-// Incremental update idea (concept):
-ll candidate_ways = (total_ways * half[c]) / remaining_len;
+```
+cnt = old_total_ways * half[c] / rem_len
 ```
 
-* **Improved Complexity:** **Time:** $O(N \cdot \Sigma)$ — Each position checks 26 characters in $O(1)$ time each. **Space:** $O(N)$.
-* **Theoretical Best:** $O(N)$ time and $O(N)$ space (since creating the output string of length $N$ takes at least $O(N)$ work). The improved version reaches this theoretical limit because $\Sigma = 26$ is a constant factor.
+Using this formula reduces the per-position cost from `O(N)` down to `O(1)`.
+
+```cpp
+// Optimized inner check in O(1) arithmetic instead of full ways() recalculation:
+ll cnt = current_total_ways * half[c] / remaining_len;
+if (cnt >= k) {
+    first += char('a' + c);
+    half[c]--;
+    current_total_ways = cnt; // Update remaining ways directly
+    break;
+}
+k -= cnt;
+```
+
+* **Improved Time Complexity:** **O(N)** — We do constant work `O(26)` for each of the `N / 2` positions.
+* **Theoretical Best Complexity:** **O(N)** — We must construct a string of length `N`, so `O(N)` is optimal. The improved version reaches this theoretical limit.
 
 ---
 
 ## Edge Cases Handled
 
-* **`k` is larger than the total possible palindromes:** The code checks `ways(half) < k` at the beginning and returns `""` immediately.
-* **Odd-length strings:** The odd character is extracted into `mid` and automatically placed in the middle without messing up the first-half calculation.
-* **Repeated characters (e.g., `"aaaa"`):** The combination formula $\binom{n}{r}$ accounts for duplicate characters correctly so arrangements are only counted once.
-* **`k = 1`:** The code correctly picks the very first alphabetical arrangement on its first try without subtracting anything from `k`.
-* **Combinatorial Overflow:** Counting permutations of long strings can exceed 64-bit integer limits (`long long`). The code caps all combination results at `LIM + 1` (`1,000,001`), keeping values safe while still correctly handling $k \le 10^6$.
+* **`k` is out of bounds:** If `k` is larger than total possible palindromes, initial check `ways(half) < k` returns `""` immediately.
+* **Odd-length strings:** Correctly isolates the single middle character using `freq[i] & 1` and places it in `mid`.
+* **Even-length strings:** `mid` remains an empty string, building a standard mirrored palindrome.
+* **Duplicate letters:** Managed naturally by using multiset permutation counts (combinations formula `N! / (c1! * c2! ...)`), avoiding overcounting duplicate arrangements.
+* **Integer Overflow:** Combinatorial counts grow extremely fast. Capping all calculations at `LIM + 1` (`10_000_001`) prevents `long long` integer overflow while keeping exact numbers for `k <= 10^6`.
