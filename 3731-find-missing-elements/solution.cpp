@@ -1,7 +1,7 @@
 class Solution {
 public:
     vector<int> findMissingElements(vector<int>& nums) {
-        vector<int>ans;
+        vector<int>store;
         sort( nums.begin(),nums.end());
         int toFind = nums[0];
         int counter = 0;
@@ -11,10 +11,10 @@ public:
                 counter++;
             }
             else{
-                ans.push_back(toFind);
+                store.push_back(toFind);
                 toFind++;
             }
         }
-        return ans;
+        return store;
     }
 };
