@@ -1,88 +1,112 @@
-![Runtime](https://img.shields.io/badge/Runtime-3%20ms%20(beats%2066.28%25)-green?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-15.08%20MB%20(beats%2012.03%25)-red?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-1%20ms%20(beats%2076.77%25)-green?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-15.24%20MB%20(beats%208.22%25)-red?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-You are given a list of numbers called `nums` and a single goal number called `target`. Your job is to find two different numbers in the list that add up exactly to `target`. 
+You are given a list of integers called `nums` and a single goal integer called `target`. Your job is to find two different positions (indices) in `nums` whose values add up to `target`.
 
-Once you find those two numbers, you return their zero-based positions (indices) in the list.
-
-Key rules:
-- Every input guarantees **exactly one** valid pair.
-- You **cannot** use the exact same element twice (you cannot add a number at index 0 to itself).
-- You can return the two indices in any order.
+Key rules to keep in mind:
+* Exactly one pair of numbers will work for every test case.
+* You cannot use the number at the exact same position twice.
+* You can return the two positions in any order.
 
 **Example:**
-If `nums = [2, 7, 11, 15]` and `target = 9`, the numbers `2` and `7` add up to `9`. Their position indices are `0` and `1`, so the answer is `[0, 1]`.
+* Input: `nums = [2, 7, 11, 15]`, `target = 9`
+* Output: `[0, 1]`
+* Explanation: The number at index `0` is `2`, and the number at index `1` is `7`. Since `2 + 7 = 9`, we return `[0, 1]`.
 
 ---
 
 ## Intuition
 
-The naive way is to check every possible pair using two nested loops. That is slow because it takes **O(n^2)** time.
+Checking every pair of numbers using two nested loops works, but it is slow.
 
-Instead of searching for pairs, think of it backwards. As you look at each number `x` in the array, ask yourself: *"What exact number do I need to reach `target`?"*
+Instead of asking, "Do these two numbers add up to target?", ask a smarter question as you look at each number: **"What companion number do I need to reach target?"**
 
-The number you need is `remainder = target - x`.
+If `target = 9` and your current number is `2`, the companion number you need is `9 - 2 = 7`.
 
-If you keep a "notebook" (a map) of numbers you have already walked past and their position index, you can just check your notebook:
-1. Is the `remainder` already in my notebook?
-2. **If yes:** You found the pair! Grab the current position and the saved position of the `remainder`.
-3. **If no:** Write the current number and its position index in your notebook, then move to the next number.
+As you step through the array one element at a time, you keep a running memory (a map) of numbers you have already seen and where you saw them. For each new number:
+1. Calculate its needed companion (`target - current_number`).
+2. Check if that companion is already in your memory.
+3. If it is, you found your answer!
+4. If it is not, store the current number in memory and move to the next number.
 
 ---
 
 ## Approach
 
-Here is how the provided C++ code executes this logic step-by-step:
+* `map<int,int>mp;` — Creates a map called `mp` to store numbers we have seen as keys, and their array positions (indices) as values.
+* `for( int i=0 ; i<nums.size() ; i++ )` — Loops through `nums` from start to end, using `i` as the current index.
+* `int rem = target-nums[i];` — Calculates the missing partner value `rem` (remainder) needed to sum up to `target`.
+* `if( mp.find(rem)!= mp.end())` — Searches `mp` to see if `rem` was already saved in a previous step.
+* `return {i,mp[rem]};` — Runs if `rem` is found. It returns an array with current index `i` and the companion's saved index `mp[rem]`.
+* `if( mp.find(rem)== mp.end())` — Checks if `rem` was **not** found in the map.
+* `mp[nums[i]]=i;` — Saves the current number `nums[i]` and its index `i` into `mp` for future checks.
+* `return {1,1};` — A fallback return required by C++ so the function always returns a value, though the loop will always find a solution first.
 
-- **Create a Map:** Create an ordered map `mp` where keys are the numbers from `nums` and values are their array indices.
-- **Loop Through Array:** Go through `nums` from left to right using index `i`.
-- **Calculate Needed Number:** For the current number `nums[i]`, calculate `rem = target - nums[i]`.
-- **Check Map for Match:** Search `mp` to see if `rem` was already saved earlier (`mp.find(rem) != mp.end()`).
-- **Return Answer:** If `rem` exists in `mp`, immediately return a vector containing `{i, mp[rem]}`.
-- **Save Current Number:** If `rem` is not found, save the current number and index into the map (`mp[nums[i]] = i`).
-- **Fallback Return:** Return `{1, 1}` at the end to satisfy the function return type (this line is never reached because a valid pair is guaranteed).
+---
+
+## Dry Run
+
+### Case 1: Standard input (`nums = [2, 7, 11, 15]`, `target = 9`)
+
+| `i` | `nums[i]` | `rem` (`target - nums[i]`) | State of `mp` before step | Action |
+|---|---|---|---|---|
+| `0` | `2` | `9 - 2 = 7` | `{}` | `7` is not in `mp`. Save `mp[2] = 0`. |
+| `1` | `7` | `9 - 7 = 2` | `{2: 0}` | `2` is in `mp` at index `0`! Return `{1, 0}`. |
+
+---
+
+### Case 2: Duplicate numbers (`nums = [3, 3]`, `target = 6`)
+
+| `i` | `nums[i]` | `rem` (`target - nums[i]`) | State of `mp` before step | Action |
+|---|---|---|---|---|
+| `0` | `3` | `6 - 3 = 3` | `{}` | `3` is not in `mp`. Save `mp[3] = 0`. |
+| `1` | `3` | `6 - 3 = 3` | `{3: 0}` | `3` is in `mp` at index `0`! Return `{1, 0}`. |
 
 ---
 
 ## Time & Space Complexity
 
-- **Time Complexity:** **O(n log n)** — The code loops through `nums` once (n steps). In C++, `std::map` is an ordered map built as a red-black tree. Looking up or inserting a value takes **O(log n)** time. Doing this for n items gives **O(n log n)** total time.
-- **Space Complexity:** **O(n)** — In the worst case, we store up to n elements in the map before finding the match.
+* **Time Complexity:** `O(n log n)` — The code loops `n` times. Inside the loop, `std::map` performs lookups and insertions in `O(log n)` time because it uses a balanced search tree under the hood.
+* **Space Complexity:** `O(n)` — In the worst case, we store up to `n` numbers inside `mp`.
 
 ### Can this be improved?
 
-**Yes, it can be improved.** 
+**Yes.** We can improve the time complexity from `O(n log n)` down to **`O(n)`**.
 
-We can swap `std::map` for `std::unordered_map`. An `unordered_map` uses a hash table instead of a tree structure. This reduces key lookups and insertions from **O(log n)** down to **O(1)** on average. We can also remove the redundant second `if` check.
+**Why the change works:**
+Standard `std::map` keeps keys ordered, which costs `O(log n)` time per operation. We do not care about ordering; we only care about fast lookups.
 
-Here are the key changed lines:
+By switching from `std::map` to `std::unordered_map` (a hash table), lookups and insertions take **`O(1)` average time** instead of `O(log n)`. Additionally, we can use a simple `else` block instead of calling `find` a second time on line 11.
 
 ```cpp
-// Change map<int,int> to unordered_map<int,int>
-unordered_map<int, int> mp;
-
+unordered_map<int, int> mp; // Use hash map for O(1) average operations
 for (int i = 0; i < nums.size(); i++) {
     int rem = target - nums[i];
     if (mp.find(rem) != mp.end()) {
-        return {i, mp[rem]};
+        return {i, mp[rem]}; // Companion found
     }
-    mp[nums[i]] = i; // Store current number directly
+    mp[nums[i]] = i; // Save current number if companion not found
 }
 ```
 
-- **Improved Time Complexity:** **O(n)** average time — Single pass through the array with O(1) hash table lookups.
-- **Improved Space Complexity:** **O(n)** — Storing up to n elements in the hash table.
-- **Theoretical Best Complexity:** **O(n)** time and **O(n)** space is the theoretical best possible performance for this problem. We must look at each number at least once to know if it forms the sum. The improved `unordered_map` version reaches this theoretical limit.
+* `unordered_map<int, int> mp;` — Replaces `map` with a hash table for constant time `O(1)` average lookups.
+* We removed the redundant `if (mp.find(rem) == mp.end())` check. If the first `if` fails, we simply insert into `mp`.
+
+**Improved Complexity:**
+* **Improved Time:** `O(n)` average time.
+* **Improved Space:** `O(n)` space.
+
+**Theoretical Best:** `O(n)` time and `O(n)` space is the absolute best theoretical complexity for an unsorted array. You must inspect every element at least once to find the pair, making `O(n)` time optimal.
 
 ---
 
 ## Edge Cases Handled
 
-- **Duplicate Values in Input:** For an input like `nums = [3, 3]` and `target = 6`, the code works correctly. It checks for `rem = 3` before inserting the second `3` into the map, successfully finding the first `3` stored at index `0`.
-- **Negative Numbers:** Works naturally with negative inputs (e.g., `nums = [-3, 4, 3]`, `target = 0`) because basic subtraction `target - nums[i]` naturally accounts for negative signs.
-- **Minimum Constraints:** Handles arrays with only 2 elements (the minimum given in constraints) correctly on the very first iteration pair.
-- **Large Values:** Values up to 10^9 and -10^9 fit within standard 32-bit signed integers (`int` in C++), avoiding integer overflow during subtraction.
+* **Duplicate Numbers in Array:** Handles inputs like `nums = [3, 3]` and `target = 6`. The code checks if the needed partner exists in `mp` *before* adding the current number. This prevents a number from matching with itself.
+* **Negative Integers:** Works correctly when `nums` contains negative values or `target` is negative (e.g., `nums = [-3, 4, 3]`, `target = 0`). Arithmetic subtraction handles signs automatically.
+* **Smallest Input Size:** Works on arrays of size 2 (the minimum constraint).
+* **Large Values:** Numbers can be up to `10^9` or `-10^9`. Standard 32-bit signed C++ `int` types handle subtraction cleanly without integer overflow.
