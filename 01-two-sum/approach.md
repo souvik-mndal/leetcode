@@ -1,94 +1,91 @@
-![Runtime](https://img.shields.io/badge/Runtime-3%20ms%20(beats%2066.44%25)-green?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-15.18%20MB%20(beats%209.66%25)-red?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-2%20ms%20(beats%2099.33%25)-brightgreen?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-47.12%20MB%20(beats%2041.18%25)-yellow?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-You are given a list of numbers called `nums` and a single target number called `target`. Your goal is to find two different positions (indices) in `nums` whose values add up to `target`.
+The goal is to find two numbers in an array (`nums`) that add up to a specific given total (`target`). Once you find those two numbers, you must return their original position numbers (their **indices**), not the values themselves.
 
-For example, if `nums = [2, 7, 11, 15]` and `target = 9`, the answer is `[0, 1]` because the number at index 0 (which is 2) plus the number at index 1 (which is 7) equals 9.
+For example, if you are given `nums = [2, 7, 11, 15]` and `target = 9`:
+- The numbers `2` and `7` add up to `9`.
+- Their indices are `0` and `1`.
+- You return `[0, 1]` (or `[1, 0]`).
 
-Key rules:
-- Every input has exactly one correct pair.
-- You cannot use the exact same position twice to make the sum.
-- You can return the two positions in any order.
+You are guaranteed that every test case has **exactly one solution**, and you cannot use the exact same array element twice to form the sum.
+
+---
 
 ## Intuition
 
-A simple way to solve this is to check every possible pair of numbers. But if the list has many numbers, checking every pair takes too long.
+The simple way to solve this is to test every possible pair using two loops. That takes **O(n^2)** time because you keep re-checking numbers you already saw.
 
-Instead, think of it like this: as you read each number `nums[i]`, you can immediately figure out the exact missing partner number you need. That missing partner is `rem = target - nums[i]`.
+Instead, ask yourself a question at each step: *"If I am looking at number X right now, what other number do I need to reach the target?"*
 
-For example, if `target` is 9 and you are currently looking at 2, your missing partner is `9 - 2 = 7`.
+That needed number is simply `target - X`. We call this the **remainder** (or complement).
 
-If you keep a notebook (a map) of every number you have already seen along with its index, you can just open your notebook and ask: *"Have I seen a 7 earlier?"*
-- If **yes**, you found your pair right away!
-- If **no**, you write down the current number 2 and its index in your notebook, then move to the next number.
+Instead of searching through the rest of the array to find that remainder, we can keep track of every number we have already walked past using a **Hash Table** (a fast lookup structure, like a contact list where a number maps to its index). 
 
-This trick lets you find the answer in a single walk through the list.
+As we walk through the array:
+1. We check if our needed remainder is already saved in our hash table.
+2. If it is, we found our pair! We immediately return the current index and the saved index.
+3. If it is not, we store the current number and its index in our table, then move to the next number.
+
+This lets us find the answer in a single pass through the array.
+
+---
 
 ## Approach
 
-Here is how the code works step-by-step:
+Here is how the code executes line by line:
 
-* `map<int,int>mp;`: Creates an ordered map named `mp`. It acts as our memory notebook. It stores numbers as keys and their index positions as values.
-* `for( int i=0 ; i<nums.size() ; i++ )`: Starts a loop that goes through `nums` from left to right, using `i` as the current index.
-* `int rem = target-nums[i];`: Calculates `rem` (short for remainder/remaining value), which is the exact partner number needed to reach `target`.
-* `if( mp.find(rem)!= mp.end())`: Checks if `rem` is already stored in our map `mp`.
-* `return {i,mp[rem]};`: Executes if `rem` was found. It immediately returns the current index `i` and the stored index of `rem` from `mp`.
-* `if( mp.find(rem)== mp.end())`: Checks if `rem` was not found in `mp`.
-* `mp[nums[i]]=i;`: Saves the current number `nums[i]` into `mp` with its index `i`, so future numbers can look it up.
-* `return {1,1};`: Returns a fallback pair if no solution was found (this line is never actually reached because the problem guarantees one solution).
+* `HashMap<Integer, Integer> map = new HashMap<>();` — Creates an empty **HashMap** (a lookup table) to store numbers as **keys** and their index positions as **values**.
+* `for (int i = 0; i < nums.length; i++)` — Starts a loop to go through the array `nums` one element at a time, keeping track of the current position using index `i`.
+* `int rem = target - nums[i];` — Calculates `rem`, which is the exact matching value needed to add to `nums[i]` to hit the `target`.
+* `if (map.containsKey(rem))` — Checks if our lookup map already holds the needed value `rem` from an earlier step.
+* `return new int[] {i, map.get(rem)};` — If `rem` is found, returns an array containing the current index `i` and the index of `rem` retrieved from `map`.
+* `map.put(nums[i], i);` — If `rem` was not found, saves the current number `nums[i]` and its position `i` into `map` so future elements can look for it.
+* `return new int[] {};` — Serves as a fallback return statement in case no pair is found (though the problem guarantees a valid answer always exists).
+
+---
 
 ## Dry Run
 
-### Case 1: Standard case (`nums = [2, 7, 11, 15]`, `target = 9`)
+### Case 1: Typical case
+`nums = [2, 7, 11, 15]`, `target = 9`
 
-| Step (`i`) | `nums[i]` | `rem` (`9 - nums[i]`) | Is `rem` in `mp`? | Action | `mp` state after step |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 0 | 2 | 7 | No | Add `2` to `mp` | `{2: 0}` |
-| 1 | 7 | 2 | Yes (`mp[2]` is 0) | Return `{1, 0}` | `{2: 0}` |
+| `i` | `nums[i]` | `rem` (`target - nums[i]`) | `map` state (Key: Value) | Action |
+| :--- | :--- | :--- | :--- | :--- |
+| `0` | `2` | `7` | `{}` | `7` is not in map. Store `map.put(2, 0)`. |
+| `1` | `7` | `2` | `{2: 0}` | `2` is in map! Return `{1, map.get(2)}` -> `{1, 0}`. |
 
-### Case 2: Out of order numbers (`nums = [3, 2, 4]`, `target = 6`)
+---
 
-| Step (`i`) | `nums[i]` | `rem` (`6 - nums[i]`) | Is `rem` in `mp`? | Action | `mp` state after step |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 0 | 3 | 3 | No | Add `3` to `mp` | `{3: 0}` |
-| 1 | 2 | 4 | No | Add `2` to `mp` | `{3: 0, 2: 1}` |
-| 2 | 4 | 2 | Yes (`mp[2]` is 1) | Return `{2, 1}` | `{3: 0, 2: 1}` |
+### Case 2: Edge case with duplicate values
+`nums = [3, 3]`, `target = 6`
+
+| `i` | `nums[i]` | `rem` (`target - nums[i]`) | `map` state (Key: Value) | Action |
+| :--- | :--- | :--- | :--- | :--- |
+| `0` | `3` | `3` | `{}` | `3` is not in map. Store `map.put(3, 0)`. |
+| `1` | `3` | `3` | `{3: 0}` | `3` is in map! Return `{1, map.get(3)}` -> `{1, 0}`. |
+
+---
 
 ## Time & Space Complexity
 
-- **Time Complexity:** **O(n log n)** — The loop runs up to `n` times (where `n` is the length of `nums`). Inside the loop, `std::map` lookups and insertions take **O(log n)** time because `std::map` uses a balanced search tree under the hood.
-- **Space Complexity:** **O(n)** — In the worst case, we store up to `n` elements in `mp`.
+* **Time Complexity:** **O(n)** — We loop through the array of length `n` at most once. Hash map lookups (`containsKey`) and insertions (`put`) take **O(1)** (constant) time on average.
+* **Space Complexity:** **O(n)** — In the worst case, we might store up to `n - 1` elements in our `map` before finding a match.
 
-### Can this be improved?
+### Is this optimal?
+**Yes, this solution is already optimal.**
 
-**Yes.** We can improve the time complexity from **O(n log n)** to **O(n)**.
+To solve this problem, you must look at each number in `nums` at least once to know if it contributes to the target, which requires at least **O(n)** time. Using a hash table gives us **O(1)** lookup speed, allowing us to hit the theoretical minimum time complexity of **O(n)** with an **O(n)** space tradeoff. No algorithm can perform better than **O(n)** time overall.
 
-The `std::map` container in C++ keeps keys sorted, which causes **O(log n)** search times. We do not need the keys to be sorted. Switching to `std::unordered_map` uses a hash table instead. A hash table provides **O(1)** average lookup and insertion times.
-
-We can also simplify the code by replacing the second `if` check with a clean `else` pattern to avoid searching the map twice.
-
-```cpp
-unordered_map<int, int> mp; // Using hash map for O(1) average lookup
-for (int i = 0; i < nums.size(); i++) {
-    int rem = target - nums[i];
-    if (mp.find(rem) != mp.end()) {
-        return {i, mp[rem]}; // Found partner, return indices
-    }
-    mp[nums[i]] = i; // Save current number and index
-}
-```
-
-- **Improved Time Complexity:** **O(n)** average — Each loop step now takes O(1) time on average.
-- **Improved Space Complexity:** **O(n)** — We still store up to `n` elements.
-- **Theoretical Best Complexity:** **O(n)** time and **O(n)** space. We must inspect each element at least once, so we cannot do better than O(n) time. The improved code reaches this optimal limit.
+---
 
 ## Edge Cases Handled
 
-- **Duplicate numbers (e.g., `nums = [3, 3]`, `target = 6`):** The code works correctly. For the second `3`, `rem` is `3`. It finds the first `3` in `mp` before it overwrites `mp[3]`, returning indices `{1, 0}`.
-- **Negative numbers (e.g., `nums = [-3, 4, 3]`, `target = 0`):** Subtraction handles negative values naturally. When `nums[i] = 3`, `rem = 0 - 3 = -3`, which finds `-3` in `mp`.
-- **Minimum array size (`nums.length = 2`):** Works correctly on the smallest valid input size without out-of-bounds errors.
-- **Self-matching prevention:** Because we check `mp.find(rem)` *before* adding `mp[nums[i]] = i`, an element can never match with itself.
+* **Duplicate Numbers in the Array:** Handled naturally (e.g., `nums = [3, 3]`, `target = 6`). The code checks if the complement exists in `map` *before* inserting the current element. Thus, the second `3` successfully matches with the first `3` stored in `map`.
+* **Negative Numbers:** Handled properly because subtraction works cleanly with negative values (e.g., `target = -2`, `nums[i] = -6` results in `rem = -2 - (-6) = 4`).
+* **Answer at the Extreme Ends:** If the matching numbers are the very first and very last elements in the array, the loop runs through all elements and finds the pair at the final index without issues.
+* **Minimum Allowed Input Size:** Handled seamlessly when `nums` has only 2 elements (the minimum size constraint), completing after checking index `1`.
