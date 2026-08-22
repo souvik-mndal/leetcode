@@ -1,91 +1,85 @@
-![Runtime](https://img.shields.io/badge/Runtime-2%20ms%20(beats%2099.33%25)-brightgreen?style=for-the-badge)
+![Runtime](https://img.shields.io/badge/Runtime-3%20ms%20(beats%2059.28%25)-yellow?style=for-the-badge)
 ![Memory](https://img.shields.io/badge/Memory-47.04%20MB%20(beats%2059.48%25)-yellow?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-The goal is to find two numbers in an array (`nums`) that add up to a specific total (`target`). Once you find those two numbers, you return their position indices (their zero-based index in the array) as a pair.
+You are given an array (a list) of integers named `nums` and a single integer called `target`. Your goal is to find two numbers inside `nums` that add up to `target`. 
 
-You are guaranteed that every test case has exactly one valid solution, and you cannot use the exact same element twice (meaning you cannot use the number at index 0 twice to make the target).
+Once you find those two numbers, you return their position numbers (their **indices**) in the list. You cannot use the exact same element twice (meaning you cannot use the number at index 0 twice to make the sum). You are guaranteed that exactly one valid answer exists in the list.
 
 **Example:**
 If `nums = [2, 7, 11, 15]` and `target = 9`:
-* Look at 2 and 7: `2 + 7 = 9`.
-* Their position indices in the array are `0` and `1`.
-* The answer is `[0, 1]` (or `[1, 0]`).
+- Look at `2` (index 0) and `7` (index 1).
+- `2 + 7 = 9`, which matches `target`.
+- You return `[0, 1]` (or `[1, 0]`).
 
 ---
 
 ## Intuition
 
-The naive way to solve this is to test every single pair of numbers using two nested loops. That requires checking up to `n * n` combinations, which is slow for large arrays.
+The brute-force way is to pick every number and test it against every other number. That requires checking pairs over and over, which is slow.
 
-The key trick ("aha!" moment) is to change the question we ask at each step:
-Instead of asking **"Do any two numbers in this array add up to target?"**, we ask **"I am looking at number X right now. What number do I need to complete the target, and have I already seen it?"**
+The key trick (the "aha!" moment) is to change how you look at the problem. Instead of asking "Do any two numbers add up to target?", ask: **"I am standing at `nums[i]`. What specific number do I need to reach `target`?"**
 
-The needed number is simply `target - current_number` (the remainder).
+That needed number is `remain = target - nums[i]`.
 
-To check if we have seen that needed number before in constant time, we store numbers we encounter in a **Hash Table** (a lookup map that stores key-value pairs). As we walk through the array once:
-1. We calculate the matching number we need (`rem`).
-2. We check if `rem` is already in our map.
-3. If it is, we immediately return both indices.
-4. If it isn't, we add our current number and its index to the map so future numbers can find it.
+To find out if you have already seen that needed number, you store every number you visit into a **Hash Table** (a memory lookup table) alongside its index. As you move through the array item by item, you check if `remain` is already sitting in your Hash Table. 
+- If it is, you immediately found your pair!
+- If it is not, you save your current number and its index into the Hash Table and move to the next item.
 
 ---
 
 ## Approach
 
-* `HashMap<Integer, Integer> map = new HashMap<>();` — Creates an empty map to keep track of numbers we have already visited. The key is the number from `nums`, and the value is its index in the array.
-* `for (int i = 0; i < nums.length; i++)` — Loops through the `nums` array from the first element to the last, using `i` as the current position index.
-* `int rem = target - nums[i];` — Calculates `rem` (the remaining amount needed), which is the exact number required to add to `nums[i]` to equal `target`.
-* `if (map.containsKey(rem))` — Checks whether the needed number `rem` was already saved into our lookup map during an earlier loop iteration.
-* `return new int[] {i, map.get(rem)};` — Runs if `rem` is found in the map. It returns an array containing the current index `i` and the stored index of `rem` retrieved via `map.get(rem)`.
-* `map.put(nums[i], i);` — Saves the current number `nums[i]` as the key and its position index `i` as the value in `map` so that subsequent elements can look it up.
-* `return new int[] {};` — Returns an empty array as a fallback in case no matching pair is found (this line is required by Java, though the problem guarantees a solution exists).
+- `HashMap<Integer, Integer> map = new HashMap<>();`: Creates an empty hash map to store each number we visit as a key and its index position as the value.
+- `for (int i = 0; i < nums.length; i++)`: Starts a loop that steps through `nums` one element at a time, keeping track of the current position index `i`.
+- `int remain = target - nums[i];`: Calculates the exact matching value needed to reach `target` when added to the current number `nums[i]`.
+- `if (map.containsKey(remain))`: Checks whether our hash map already contains the needed `remain` value from an earlier step.
+- `return new int[] {i, map.get(remain)};`: Executes when the matching value is found. It returns an array containing the current index `i` and the stored index of the matching value retrieved via `map.get(remain)`.
+- `map.put(nums[i], i);`: Executes when the match is not found yet. It saves the current number `nums[i]` and its index `i` into `map` so future iterations can look it up.
+- `return new int[] {};`: Serves as a fallback return statement required by Java, reaching this point only if no pair was found.
 
 ---
 
 ## Dry Run
 
-### Case 1: Standard case with distinct numbers
-`nums = [2, 7, 11, 15]`, `target = 9`
+### Case 1: Standard Case (`nums = [2, 7, 11, 15]`, `target = 9`)
 
-| `i` | `nums[i]` | `rem` (target - nums[i]) | `map` contents before check | Action / Output |
+| Step (`i`) | `nums[i]` | `remain` (`target - nums[i]`) | `map` contents (before action) | Action |
 | :--- | :--- | :--- | :--- | :--- |
-| `0` | `2` | `9 - 2 = 7` | `{}` | `7` is not in map. Store `map.put(2, 0)`. |
-| `1` | `7` | `9 - 7 = 2` | `{2: 0}` | `2` is found in map at index `0`! Return `[1, 0]`. |
+| `0` | `2` | `9 - 2 = 7` | `{}` | `7` is not in `map`. Store `{2: 0}`. |
+| `1` | `7` | `9 - 7 = 2` | `{2: 0}` | `2` is in `map`! Return `[1, 0]`. |
 
 ---
 
-### Case 2: Case with duplicate numbers
-`nums = [3, 3]`, `target = 6`
+### Case 2: Array with Duplicate Values (`nums = [3, 3]`, `target = 6`)
 
-| `i` | `nums[i]` | `rem` (target - nums[i]) | `map` contents before check | Action / Output |
+| Step (`i`) | `nums[i]` | `remain` (`target - nums[i]`) | `map` contents (before action) | Action |
 | :--- | :--- | :--- | :--- | :--- |
-| `0` | `3` | `6 - 3 = 3` | `{}` | `3` is not in map. Store `map.put(3, 0)`. |
-| `1` | `3` | `6 - 3 = 3` | `{3: 0}` | `3` is found in map at index `0`! Return `[1, 0]`. |
+| `0` | `3` | `6 - 3 = 3` | `{}` | `3` is not in `map`. Store `{3: 0}`. |
+| `1` | `3` | `6 - 3 = 3` | `{3: 0}` | `3` is in `map`! Return `[1, 0]`. |
 
 ---
 
 ## Time & Space Complexity
 
-* **Time Complexity:** **O(n)** — We iterate through the array of `n` elements at most once. Looking up a key (`containsKey`) and inserting a key (`put`) in a `HashMap` takes **O(1)** (constant time) on average.
-* **Space Complexity:** **O(n)** — In the worst case, we might store up to `n - 1` elements in the map before finding the matching pair on the last element.
+- **Time Complexity:** **O(n)** — We iterate through the array of `n` elements at most once. Looking up a key and inserting a key in a `HashMap` takes **O(1)** average time.
+- **Space Complexity:** **O(n)** — In the worst case, we might insert up to `n - 1` elements into the hash map before finding the matching pair.
 
-### Is this solution optimal?
-**Yes, this code is already optimal.** 
+### Can it be improved?
 
-* **Why Time is optimal:** We must examine each number in `nums` at least once to know if it contributes to the target sum, which means any valid solution requires at least **O(n)** time.
-* **Why Space is optimal:** To achieve **O(n)** time in a single pass without repeatedly scanning previous elements, we must store previously seen elements in memory. This requires **O(n)** extra space. 
+**No, this is already the theoretically optimal complexity for this problem.**
 
-While you can reduce extra space to **O(1)** by using two nested loops (brute force), doing so degrades time complexity to **O(n^2)**, which fails the problem's follow-up goal. Therefore, **O(n)** time and **O(n)** space is the best overall theoretical balance for an unsorted input array.
+- **Time:** To know if a matching pair exists in an unsorted array, you must inspect at least every element once. Thus, **O(n)** is the absolute lower bound for time complexity.
+- **Space:** You can reduce space complexity to **O(1)** by using a two-pointer approach, but that requires sorting the array first. Sorting takes **O(n log n)** time, which worsens the time complexity. Therefore, **O(n)** time with **O(n)** space is the best overall balance.
 
 ---
 
 ## Edge Cases Handled
 
-* **Duplicate Numbers in Input:** Inputs like `nums = [3, 3]` with `target = 6`. Because we check `map.containsKey(rem)` *before* adding the current element `map.put(nums[i], i)`, the second `3` safely finds the first `3` already inside the map without overwriting or confusing indices.
-* **Negative Numbers:** Handles inputs with negative values, such as `nums = [-3, 4, 3, 90]` and `target = 0`. Arithmetic subtraction (`0 - (-3) = 3`) works identically for negative integers.
-* **Minimum Array Length:** Works correctly for the minimum allowed constraint size (`nums.length = 2`).
-* **Target Requiring Large Values:** Handles values up to `10^9` or `-10^9` without integer overflow issues, as standard Java standard 32-bit signed integers handle values up to `2 * 10^9`.
+- **Duplicate Values (e.g., `nums = [3, 3]`, `target = 6`):** The code safely handles duplicate values because it checks `map.containsKey(remain)` *before* putting the current number into `map`. When visiting the second `3`, the first `3` is already sitting in the map.
+- **Negative Numbers (e.g., `nums = [-3, 4, 3]`, `target = 0`):** Basic subtraction (`target - nums[i]`) works cleanly across positive and negative values. For `nums[0] = -3`, `remain = 0 - (-3) = 3`.
+- **Large Arrays:** Works efficiently up to the constraint limit (`10^4` elements) because lookup time per element stays constant on average.
+- **Solution at the End:** If the valid pair consists of the last two elements in the array, the loop successfully checks all previous elements saved in memory without skipping any.
