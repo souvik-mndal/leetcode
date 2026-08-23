@@ -1,153 +1,156 @@
 ![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-95.03%20MB%20(beats%2080.00%25)-brightgreen?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-95.24%20MB%20(beats%2042.54%25)-yellow?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-You are given two sorted lists of numbers, `nums1` and `nums2`. Both lists are already sorted in ascending order (smallest to largest).
+We are given two sorted lists of numbers, called `nums1` and `nums2`. Our goal is to find the **median** of all these numbers combined into one sorted sequence.
 
-Your goal is to find the **median** of all numbers combined into a single sorted list.
+The median is the exact middle number in a sorted list. 
+- If the total number of elements is **odd**, the median is the single element in the center.
+- If the total number of elements is **even**, the median is the average of the two central numbers.
 
-*   The **median** is the exact middle value of a sorted list.
-*   If the total count of numbers is **odd**, the median is the single element right in the middle.
-*   If the total count of numbers is **even**, the median is the average of the two middle elements.
+### Examples
+- **Example 1:** `nums1 = [1, 3]`, `nums2 = [2]`
+  - If we combine and sort them, we get `[1, 2, 3]`.
+  - The total count is 3 (odd). The middle element is `2`.
+  - **Output:** `2.00000`
 
-**Example:**
-*   `nums1 = [1, 3]`
-*   `nums2 = [2]`
-*   Combined sorted array: `[1, 2, 3]`
-*   Total size is 3 (odd). The middle number is `2`. The median is `2.0`.
+- **Example 2:** `nums1 = [1, 2]`, `nums2 = [3, 4]`
+  - If we combine and sort them, we get `[1, 2, 3, 4]`.
+  - The total count is 4 (even). The middle two elements are `2` and `3`.
+  - The average is `(2 + 3) / 2 = 2.5`.
+  - **Output:** `2.50000`
 
 ---
 
 ## Intuition
 
-The straightforward way to find the median is to combine both arrays into one large sorted array, then pick the middle item. However, making a new array takes extra memory.
+To find the middle element, we do not need to merge both arrays into a brand-new array. Merging takes extra space. 
 
-Instead, we can simulate merging the two arrays without creating a new one. We keep two pointers (index counters) starting at the beginning of each array. At each step, we pick the smaller element, advance its pointer, and increment a total counter `cnt`.
+Instead, we can simulate merging by using two pointers (one for each array) to step through elements from smallest to largest. 
 
-We calculate in advance which index positions will hold the median value(s). Once our counter `cnt` reaches those target indices, we save the numbers in `val1` and `val2`. When done, we compute the final median.
+Since we know the lengths of both arrays, we can calculate the exact index (or indices) where the median will sit before we start moving pointers. As we step through the numbers in sorted order, we count how many numbers we have seen so far. When our count hits the target index, we save that number. Once we hit our target, we have everything we need to compute the median.
 
 ---
 
 ## Approach
 
-Here is how the code executes step-by-step:
+Here is step-by-step how the code executes this process:
 
-*   `int i=0 , j=0;`: Initializes pointer `i` for `nums1` and pointer `j` for `nums2` at index 0.
-*   `int n=nums1.size(); int m=nums2.size();`: Stores the total element count of `nums1` in `n` and `nums2` in `m`.
-*   `int t=n+m;`: Calculates `t`, the total combined size of both arrays.
-*   `if( t%2 == 1 ){ find2 = t/2; find1=-1; }`: Checks if total length `t` is odd. If odd, sets `find2` to the exact middle index `t / 2` and sets `find1` to `-1` (meaning we only need one value).
-*   `else{ find2 = t/2; find1 = t/2-1; }`: If total length `t` is even, sets `find1` and `find2` to the two middle indices `(t / 2) - 1` and `t / 2`.
-*   `while( i<n && j<m )`: Loops as long as both arrays still have elements left to inspect.
-*   `if( nums1[i]<=nums2[j] )`: Checks if the current element in `nums1` is smaller than or equal to the current element in `nums2`.
-*   `if( cnt == find1 ){ val1 = nums1[i]; }`: Saves the element to `val1` if current index `cnt` matches target position `find1`.
-*   `if( cnt == find2 ){ val2 = nums1[i]; }`: Saves the element to `val2` if current index `cnt` matches target position `find2`.
-*   `cnt++; i++;`: Increments total step count `cnt` and advances pointer `i` in `nums1`.
-*   `else { ... cnt++; j++; }`: If `nums2[j]` is smaller, checks target indices for `nums2[j]`, saves matching values, increments `cnt`, and advances pointer `j` in `nums2`.
-*   `while( i<n )`: Processes any leftover elements in `nums1` if `nums2` ran out of elements early, checking for target indices `find1` and `find2`.
-*   `while( j<m )`: Processes any leftover elements in `nums2` if `nums1` ran out of elements early, checking for target indices `find1` and `find2`.
-*   `if( find1 == -1 ){ return (float)val2; }`: If total length was odd, returns `val2` cast to float as the single median.
-*   `else{ return (val1+val2)/2.0; }`: If total length was even, returns the average of `val1` and `val2`.
+* `int i=0 , j=0;`: Starts index pointer `i` at the beginning of `nums1` and pointer `j` at the beginning of `nums2`.
+* `int n=nums1.size();` and `int m=nums2.size();`: Stores the total size of `nums1` in `n` and `nums2` in `m`.
+* `int cnt  = 0;`: Tracks how many combined elements we have checked so far.
+* `int val1=0,val2=0;`: Holds the values of the target middle elements once we reach them.
+* `int t=n+m;`: Calculates the total length of both arrays combined.
+* `if( t%2 == 1 ) { find2 = t/2; find1=-1; }`: If total length `t` is odd, sets `find2` to the middle index `t / 2`. Sets `find1` to `-1` as a marker that we only need one middle value.
+* `else { find2 = t/2; find1 = t/2-1; }`: If total length `t` is even, sets `find1` and `find2` to the two center indices needed for the average.
+* `while( i<n && j<m )`: Loops through both arrays as long as both have unchecked elements.
+* `if( nums1[i]<=nums2[j] )`: Checks if the current element in `nums1` is smaller or equal. If it matches `find1` or `find2`, it saves `nums1[i]` into `val1` or `val2`, then increments `cnt` and `i`.
+* `else`: Runs if the current element in `nums2` is smaller. If it matches `find1` or `find2`, it saves `nums2[j]` into `val1` or `val2`, then increments `cnt` and `j`.
+* `while( i<n )`: Processes any leftover elements in `nums1` if `nums2` runs out first, saving target values if `cnt` matches `find1` or `find2`.
+* `while( j<m )`: Processes any leftover elements in `nums2` if `nums1` runs out first, saving target values if `cnt` matches `find1` or `find2`.
+* `if( find1 == -1 ) return (float)val2;`: If the total count was odd, returns `val2` directly as a decimal value.
+* `else return (val1+val2)/2.00;`: If even, returns the floating-point average of `val1` and `val2`.
 
 ---
 
 ## Dry Run
 
-### Case 1: Odd total size (`nums1 = [1,3]`, `nums2 = [2]`)
+### Case 1: Odd Total Length (`nums1 = [1, 3]`, `nums2 = [2]`)
+Variables: `n = 2`, `m = 1`, `t = 3`. `find1 = -1`, `find2 = 1`.
 
-*   `n = 2`, `m = 1`, `t = 3` (odd total length).
-*   `find1 = -1`, `find2 = 1`.
-
-| Step | `i` | `j` | `cnt` | `val1` | `val2` | Action |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Start | 0 | 0 | 0 | 0 | 0 | Compare `nums1[0]` (1) and `nums2[0]` (2). 1 is smaller. `cnt` (0) != `find2` (1). Move `i` to 1, `cnt` to 1. |
-| 1 | 1 | 0 | 1 | 0 | 2 | Compare `nums1[1]` (3) and `nums2[0]` (2). 2 is smaller. `cnt` (1) == `find2` (1), so `val2` = 2. Move `j` to 1, `cnt` to 2. |
-| End | 1 | 1 | 2 | 0 | 2 | Main `while` loop ends (`j < m` fails). Remaining loops do nothing. `find1 == -1`, return `val2` = 2.0. |
+| Step | `i` | `j` | `cnt` | Action / Decision | `val1` | `val2` |
+|---|---|---|---|---|---|---|
+| Start | 0 | 0 | 0 | Compare `nums1[0]` (1) <= `nums2[0]` (2). `cnt` (0) isn't target. Advance `i`. | 0 | 0 |
+| 1 | 1 | 0 | 1 | Compare `nums1[1]` (3) > `nums2[0]` (2). `cnt` (1) matches `find2` (1). Set `val2 = 2`. Advance `j`. | 0 | 2 |
+| End | 1 | 1 | 2 | Loop terminates (`j == m`). `find1 == -1`, return `val2` = **2.0**. | 0 | 2 |
 
 ---
 
-### Case 2: Even total size (`nums1 = [1,2]`, `nums2 = [3,4]`)
+### Case 2: Even Total Length (`nums1 = [1, 2]`, `nums2 = [3, 4]`)
+Variables: `n = 2`, `m = 2`, `t = 4`. `find1 = 1`, `find2 = 2`.
 
-*   `n = 2`, `m = 2`, `t = 4` (even total length).
-*   `find1 = 1`, `find2 = 2`.
-
-| Step | `i` | `j` | `cnt` | `val1` | `val2` | Action |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Start | 0 | 0 | 0 | 0 | 0 | Compare `nums1[0]` (1) and `nums2[0]` (3). 1 is smaller. Move `i` to 1, `cnt` to 1. |
-| 1 | 1 | 0 | 1 | 2 | 0 | Compare `nums1[1]` (2) and `nums2[0]` (3). 2 is smaller. `cnt` (1) == `find1` (1), so `val1` = 2. Move `i` to 2, `cnt` to 2. |
-| 2 | 2 | 0 | 2 | 2 | 0 | Main `while` ends (`i < n` fails). Enter `while(j < m)`. `cnt` (2) == `find2` (2), so `val2` = 3. Move `j` to 1, `cnt` to 3. |
-| End | 2 | 1 | 3 | 2 | 3 | Return `(val1 + val2) / 2.0` = `(2 + 3) / 2.0` = 2.5. |
+| Step | `i` | `j` | `cnt` | Action / Decision | `val1` | `val2` |
+|---|---|---|---|---|---|---|
+| Start | 0 | 0 | 0 | Compare `nums1[0]` (1) <= `nums2[0]` (3). `cnt` (0) isn't target. Advance `i`. | 0 | 0 |
+| 1 | 1 | 0 | 1 | Compare `nums1[1]` (2) <= `nums2[0]` (3). `cnt` (1) matches `find1` (1). Set `val1 = 2`. Advance `i`. | 2 | 0 |
+| 2 | 2 | 0 | 2 | Main loop ends (`i == n`). Enter `while(j < m)`. `cnt` (2) matches `find2` (2). Set `val2 = nums2[0]` (3). Advance `j`. | 2 | 3 |
+| End | 2 | 1 | 3 | Traversal done. Return `(val1 + val2) / 2.0` = `(2 + 3) / 2.0` = **2.5**. | 2 | 3 |
 
 ---
 
 ## Time & Space Complexity
 
-*   **Current Time Complexity:** **O(m + n)** — The code steps through elements one by one until it reaches the middle index. In the worst case, it inspects about half of all total elements `(m + n) / 2`.
-*   **Current Space Complexity:** **O(1)** — Only a few primitive integer variables (`i`, `j`, `cnt`, `val1`, `val2`, etc.) are used. Memory consumption remains constant regardless of input size.
+- **Time:** **O(m + n)** — In the worst case, the loop steps through half of all total elements across both arrays to reach the median position.
+- **Space:** **O(1)** — We only store integer variables (`i`, `j`, `cnt`, `val1`, `val2`, `find1`, `find2`). No new array is created.
 
 ### Can this be improved?
 
-**Yes.** The problem prompt specifically requests an **O(log (m+n))** runtime.
+**Yes.** The problem statement explicitly requires **O(log (m + n))** runtime complexity. The current code runs in linear **O(m + n)** time.
 
-To achieve logarithmic time, we must stop walking through elements one by one. Instead, we use **Binary Search** on the smaller array.
+To reach logarithmic time, we must use **Binary Search** instead of scanning elements one by one.
 
-#### Why Binary Search Works for This Problem:
-If we divide both arrays into a Left partition and a Right partition, the left combined half must contain exactly half of all elements.
+#### How Binary Search solves this:
+Instead of counting from start to middle, we can divide both arrays into two halves (Left Partition and Right Partition) such that:
+1. The combined left partition contains half of the total elements.
+2. Every number in the left partition is smaller than or equal to every number in the right partition.
 
-We pick a partition point in `nums1` using binary search. The partition point in `nums2` is then automatically determined so that the total left elements equal the total right elements.
+Since both arrays are already sorted, we do binary search on the **smaller array** to find the correct partition split point (`partitionX`). The corresponding split point in the second array (`partitionY`) is then calculated automatically.
 
-A partition is correct when:
-1. Max element on left of `nums1` <= Min element on right of `nums2`
-2. Max element on left of `nums2` <= Min element on right of `nums1`
-
-If these conditions hold, we have split the combined array correctly in half. We can calculate the median immediately using the boundaries of the split. If not, we adjust our binary search range left or right.
-
-#### Improved Code Snippet (Binary Search Approach):
+#### Optimized Code Snippet:
 
 ```cpp
 double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {
+    // Ensure nums1 is smaller array to minimize binary search range
     if (nums1.size() > nums2.size()) 
-        return findMedianSortedArrays(nums2, nums1); // Ensure nums1 is smaller
+        return findMedianSortedArrays(nums2, nums1);
 
-    int n = nums1.size();
-    int m = nums2.size();
-    int low = 0, high = n;
+    int x = nums1.size();
+    int y = nums2.size();
+    int low = 0, high = x;
 
     while (low <= high) {
-        int cut1 = (low + high) / 2;
-        int cut2 = (n + m + 1) / 2 - cut1;
+        int partitionX = (low + high) / 2;
+        int partitionY = (x + y + 1) / 2 - partitionX;
 
-        int left1 = (cut1 == 0) ? INT_MIN : nums1[cut1 - 1];
-        int left2 = (cut2 == 0) ? INT_MIN : nums2[cut2 - 1];
+        int maxLeftX = (partitionX == 0) ? INT_MIN : nums1[partitionX - 1];
+        int minRightX = (partitionX == x) ? INT_MAX : nums1[partitionX];
 
-        int right1 = (cut1 == n) ? INT_MAX : nums1[cut1];
-        int right2 = (cut2 == m) ? INT_MAX : nums2[cut2];
+        int maxLeftY = (partitionY == 0) ? INT_MIN : nums2[partitionY - 1];
+        int minRightY = (partitionY == y) ? INT_MAX : nums2[partitionY];
 
-        if (left1 <= right2 && left2 <= right1) {
-            if ((n + m) % 2 == 0)
-                return (max(left1, left2) + min(right1, right2)) / 2.0;
-            else
-                return max(left1, left2);
-        } else if (left1 > right2) {
-            high = cut1 - 1; // Move search space left
+        if (maxLeftX <= minRightY && maxLeftY <= minRightX) {
+            if ((x + y) % 2 == 0) {
+                return (max(maxLeftX, maxLeftY) + min(minRightX, minRightY)) / 2.0;
+            } else {
+                return max(maxLeftX, maxLeftY);
+            }
+        } else if (maxLeftX > minRightY) {
+            high = partitionX - 1; // Move left in nums1
         } else {
-            low = cut1 + 1; // Move search space right
+            low = partitionX + 1;  // Move right in nums1
         }
     }
     return 0.0;
 }
 ```
 
-*   **Improved Time Complexity:** **O(log(min(m, n)))** — Binary search runs on the smaller array, cutting the search space in half each step.
-*   **Theoretical Best Complexity:** **O(log(min(m, n)))**. The improved version reaches this theoretical best bound.
+#### Why these non-obvious lines work:
+- `if (nums1.size() > nums2.size())`: Ensures we binary-search on the shorter array, keeping search steps as small as possible.
+- `partitionY = (x + y + 1) / 2 - partitionX`: Automatically balances the total count of numbers on the left side vs the right side.
+- `INT_MIN` / `INT_MAX`: Prevents out-of-bounds errors when a partition takes zero elements from one array.
+
+#### Resulting Complexities:
+- **Improved Complexity:** **Time:** **O(log(min(m, n)))**, **Space:** **O(1)**.
+- **Theoretical Best:** **O(log(min(m, n)))** is the absolute theoretical best because binary search halves the search space of the smaller array at each step. The improved version reaches this optimal limit.
 
 ---
 
 ## Edge Cases Handled
 
-*   **One Array is Empty (`m = 0` or `n = 0`):** The first `while` loop skips completely because `i < n && j < m` evaluates to false. The remaining while loop runs for the non-empty array and correctly picks the middle values.
-*   **Odd vs Even Total Elements:** Handled cleanly by setting `find1 = -1` for odd lengths and computing appropriate target positions for even lengths.
-*   **Duplicate Numbers Across Arrays:** Handled using `<=` in `nums1[i] <= nums2[j]`, preserving standard ordering.
-*   **Negative Numbers:** Supported naturally since integer comparison operates correctly across negative and positive bounds.
+- **One array is empty (`m = 0` or `n = 0`):** The main combined loop skips, and the remaining `while` loop scans through the non-empty array directly to pick up the median values.
+- **Single element total (`m + n = 1`):** `find2` becomes `0` and `find1` becomes `-1`. The logic picks up the single element and returns it as a floating-point number.
+- **Duplicate elements across arrays:** Uses `<=` in comparisons, ensuring elements with identical values are counted properly without skipped iterations.
+- **Negative numbers:** Handles values down to `-10^6` cleanly because comparisons and standard average division maintain standard integer and double signs.
