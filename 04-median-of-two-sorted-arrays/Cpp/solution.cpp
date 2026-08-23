@@ -64,7 +64,7 @@ public:
             return (float)val2;
         }
         else{
-            return (val1+val2)/2.0;        
+            return (val1+val2)/2.00;        
 
         }
     }
