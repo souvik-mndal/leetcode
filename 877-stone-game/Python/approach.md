@@ -1,102 +1,94 @@
 ![Runtime](https://img.shields.io/badge/Runtime-0%20ms%20(beats%20100.00%25)-brightgreen?style=for-the-badge)
-![Memory](https://img.shields.io/badge/Memory-12.46%20MB%20(beats%2038.53%25)-orange?style=for-the-badge)
+![Memory](https://img.shields.io/badge/Memory-19.38%20MB%20(beats%2043.85%25)-yellow?style=for-the-badge)
 
 ---
 
 ## Problem Explained
 
-Alice and Bob play a game with an even number of stone piles arranged in a single row. Each pile contains a positive number of stones. 
+Alice and Bob are playing a turn-based strategy game with a row of stone piles.
+- The game starts with an **even** number of piles.
+- Each pile has a certain number of stones.
+- The total sum of all stones across all piles is **odd**, meaning there are no ties.
+- Alice always goes first.
+- On each turn, a player can only take the pile at the very beginning or at the very end of the remaining row.
+- The player who collects the most total stones by the end wins.
 
-Here are the rules of the game:
-* Alice always goes first.
-* On any player's turn, they can take all stones from either the **very first pile** or the **very last pile** remaining in the row.
-* The game ends when all piles are taken.
-* Whoever has the higher total number of stones wins.
-* The total sum of all stones in all piles is guaranteed to be an odd number, which means a tie is impossible.
+Your goal is to return `True` if Alice can guarantee a win assuming both players play perfectly, or `False` if Bob wins.
 
-We need to return `True` if Alice wins assuming both players make the best possible moves, and `False` if Bob wins.
-
-**Example:**
-If `piles = [5, 3, 4, 5]`:
-* The total number of piles is 4 (an even number).
-* The sum of stones is 5 + 3 + 4 + 5 = 17 (an odd number).
-* We need to determine if Alice can force a win.
+For example, if `piles = [5, 3, 4, 5]`:
+- Alice takes the first `5`. Piles left: `[3, 4, 5]`.
+- Bob takes `3`. Piles left: `[4, 5]`.
+- Alice takes `5`. Piles left: `[4]`.
+- Bob takes `4`.
+Alice ends up with `5 + 5 = 10` stones, and Bob gets `3 + 4 = 7` stones. Alice wins, so the result is `True`.
 
 ---
 
 ## Intuition
 
-The key takeaway is that **Alice will always win every game**. 
+The major key to this problem is realizing that **Alice can always win, no matter what the input is.**
 
-Why? Because of two rules given in the constraints:
-1. The total number of piles is **even**.
-2. The total sum of all stones is **odd**.
+Why? Look at the rules carefully:
+1. There are an **even** number of piles.
+2. The total number of stones is **odd**.
 
-Because the number of piles is even, we can color the positions in the row like a chessboard: alternating **even index positions** (0, 2, 4, ...) and **odd index positions** (1, 3, 5, ...).
+Because there are an even number of piles, we can split the pile positions into two sets:
+- **Even-indexed piles:** position 0, position 2, position 4, etc.
+- **Odd-indexed piles:** position 1, position 3, position 5, etc.
 
-Since the total stone count is odd, the sum of stones at even positions can never equal the sum of stones at odd positions. One of these two groups must have a higher total than the other.
+Since the total sum of all stones is odd, the sum of even-indexed piles and the sum of odd-indexed piles **cannot be equal**. One set MUST have more total stones than the other.
 
-Because Alice goes first, she can choose to collect **all even-indexed piles** or **all odd-indexed piles**:
-* If Alice wants all **even** piles, she starts by picking index `0`. Now Bob is forced to pick between two **odd** indices (index `1` or the last index `N - 1`). No matter what Bob picks, he opens up another even index for Alice to pick on her next turn!
-* If Alice wants all **odd** piles, she starts by picking the last index `N - 1` (which is an odd index). Now Bob is forced to pick between two **even** indices. On her next turn, Alice can grab another odd index.
+Before the game starts, Alice can sum up all even-indexed piles and all odd-indexed piles. 
+- If even-indexed piles have more stones, Alice takes the first pile (index 0). Bob is now forced to pick between index 1 and the last index (both are odd!). No matter what Bob picks, he exposes an even index for Alice to take next.
+- If odd-indexed piles have more stones, Alice takes the last pile (an odd index). Again, Bob is forced to expose odd indices for Alice.
 
-Before the game even starts, Alice can quickly add up the even piles and odd piles, see which group is larger, and force Bob into taking the smaller group. 
-
-Therefore, Alice can always guarantee a win. We do not need to simulate the game at all — returning `True` is always correct!
+Alice can control the game to take **all** even-indexed piles or **all** odd-indexed piles. Since she goes first, she picks whichever group has more stones and is guaranteed to win every single time!
 
 ---
 
 ## Approach
 
-Here is how the code executes step-by-step:
+Here is the step-by-step logic of the code:
 
-* `def stoneGame(self, piles):`: Accepts the array `piles` containing the size of each stone pile.
-* `return True`: Immediately returns `True` because Alice can always win by using the even/odd index strategy described above.
+* `return True`: Because Alice always has a strategy to win (by choosing all even-indexed piles or all odd-indexed piles, whichever group has a larger sum), she will never lose. Thus, the program simply returns `True` immediately without needing to simulate the game or calculate dynamic programming tables.
 
 ---
 
 ## Dry Run
 
-### Case 1: Standard four-pile game (`piles = [5, 3, 4, 5]`)
+### Case 1: Typical case (`piles = [5, 3, 4, 5]`)
 
-Even-indexed piles (0, 2): `5 + 4 = 9` stones.  
-Odd-indexed piles (1, 3): `3 + 5 = 8` stones.  
-Alice chooses the even strategy because `9 > 8`.
-
-| Step | `piles` | Action | Result |
+| Step | piles | Action | Return Value |
 | :--- | :--- | :--- | :--- |
-| 1 | `[5, 3, 4, 5]` | Evaluate winning strategy (Even group = 9, Odd group = 8) | Alice can force a win |
-| 2 | `[5, 3, 4, 5]` | Return result | Returns `True` |
+| 1 | `[5, 3, 4, 5]` | Code evaluates `return True` | `True` |
 
 ---
 
-### Case 2: Game with odd-sum dominant (`piles = [3, 7, 2, 3]`)
+### Case 2: Alternate case (`piles = [3, 7, 2, 3]`)
 
-Even-indexed piles (0, 2): `3 + 2 = 5` stones.  
-Odd-indexed piles (1, 3): `7 + 3 = 10` stones.  
-Alice chooses the odd strategy because `10 > 5`.
-
-| Step | `piles` | Action | Result |
+| Step | piles | Action | Return Value |
 | :--- | :--- | :--- | :--- |
-| 1 | `[3, 7, 2, 3]` | Evaluate winning strategy (Even group = 5, Odd group = 10) | Alice can force a win |
-| 2 | `[3, 7, 2, 3]` | Return result | Returns `True` |
+| 1 | `[3, 7, 2, 3]` | Code evaluates `return True` | `True` |
 
 ---
 
 ## Time & Space Complexity
 
-* **Time Complexity:** **O(1)** — Constant time. The code executes a single return statement regardless of the length of `piles`.
-* **Space Complexity:** **O(1)** — Constant space. No extra memory or variables are allocated.
+- **Time:** O(1) — The code executes a single return statement in constant time regardless of the size of the input array.
+- **Space:** O(1) — No extra memory or data structures are created.
 
-### Is this already optimal?
-**Yes, this is completely optimal.** 
-* You cannot run faster than O(1) time or use less memory than O(1) space. 
-* Many full game-tree solutions use Dynamic Programming which takes O(N^2) time and O(N^2) space to calculate the exact difference in final scores. However, because the problem only asks *if* Alice wins (a boolean), mathematical logic allows us to answer in O(1) without calculating the score difference.
+### Is this optimal?
+Yes, this is the theoretical best possible complexity.
+- **Time Complexity:** O(1) is the absolute limit because we do not even need to read through the array to know the answer.
+- **Space Complexity:** O(1) uses no extra memory.
+
+No further improvements can be made because constant time and space are already optimal.
 
 ---
 
 ## Edge Cases Handled
 
-* **Minimum array length (`piles.length == 2`):** Alice simply picks `max(piles[0], piles[1])` and wins immediately. The logic holds, returning `True`.
-* **Large arrays (`piles.length == 500`):** Because the time complexity is O(1), large inputs run instantly without any performance penalty or stack overflow risk.
-* **Duplicate values across piles (e.g., `[3, 7, 2, 3]`):** Works seamlessly because the problem guarantees the total sum across all piles is odd, so the sum of even positions and odd positions can never be equal. There are no ties.
+- **Smallest valid input size (2 piles):** E.g., `piles = [2, 10]`. Alice picks 10 and wins. The code returns `True`.
+- **Large inputs (500 piles):** The array length has no impact on execution speed because the answer is calculated in O(1) time.
+- **Piles with identical edge values:** E.g., `piles = [5, 1, 2, 5]`. Alice can still choose the overall winning parity set (odd vs even positions) and win.
+- **No ties:** The problem guarantees an odd total sum of stones, ensuring Alice's chosen parity set is strictly greater than Bob's set.
