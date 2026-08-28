@@ -4,4 +4,4 @@ class Solution(object):
         :type piles: List[int]
         :rtype: bool
         """
-        return Yrue
+        return True
